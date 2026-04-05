@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 6: ביצועים - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 6: ביצועים</h1>
+      <p class="subtitle">איכות אדפטיבית, טעינה פרוגרסיבית, דחיסה &mdash; מהירות ברמת <span class="ltr">Sketchfab</span></p>
+      <span class="version-badge completed" dir="ltr">v0.6.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          אין טעם בויואר יפהפה שלוקח 30 שניות לטעון ורץ ב-15 פריימים לשנייה.
+          <span class="ltr">Sketchfab</span> מצליח להציג מודלים כבדים בצורה חלקה כי הוא עושה
+          <strong>8 מעברי אופטימיזציה</strong> על כל קובץ שמעלים, ומתאים את האיכות למכשיר אוטומטית.
+        </p>
+
+        <div class="card">
+          <div class="card-title">&#128248; טעינה פרוגרסיבית &mdash; הצג משהו מיד</div>
+          <p>
+            במקום לחכות שהכל ייטען &mdash; מציגים תוצאה חלקית מיד ומשפרים בהדרגה:
+          </p>
+          <ul>
+            <li><strong>שלב 1</strong> (מיידי): קווי מתאר של תיבה חוסמת &mdash; המשתמש רואה "משהו"</li>
+            <li><strong>שלב 2</strong> (1-2 שניות): הגיאומטריה עם חומרים בסיסיים &mdash; הצורה ניכרת</li>
+            <li><strong>שלב 3</strong> (2-5 שניות): טקסטורות מלאות באיכות עולה &mdash; התוצאה הסופית</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#9881; איכות אדפטיבית &mdash; המכשיר קובע</div>
+          <p>
+            כמו משחקי וידיאו שמתאימים גרפיקה לכרטיס המסך &mdash; הויואר מזהה את ביצועי המכשיר
+            ומכוונן את עצמו אוטומטית. טלפון ישן? פחות אפקטים. מחשב גיימינג? הכל על מקסימ��ם.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128230; דחיסה &mdash; פחות נתונים, אותו מראה</div>
+          <p>
+            <strong>דחיסת טקסטורות (<span class="ltr">KTX2 + Basis Universal</span>):</strong>
+            מקטינה קבצי תמונה ב-82% ומאפשרת ל-<span class="ltr">GPU</span> לקרוא אותם ישירות בלי פענוח.
+          </p>
+          <p>
+            <strong>דחיסת גיאומטריה (<span class="ltr">Draco</span>):</strong>
+            מקטינה נתוני צורה ב-90-95%. במקום 60MB קובץ, רק 3-6MB.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">מנגנוני אדפטיביות, <span class="ltr">LOD</span>, תקציב פריימים</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>מכונת מצבים של תקציב פריימים</h3>
+        <pre><code><span class="cm">// frame-budget.ts - Adaptive Quality Controller</span>
+<span class="kw">const</span> TARGET_FPS = <span class="num">60</span>;
+<span class="kw">const</span> FRAME_BUDGET = <span class="num">1000</span> / TARGET_FPS; <span class="cm">// 16.67ms</span>
+<span class="kw">const</span> HISTORY_SIZE = <span class="num">30</span>;
+<span class="kw">const</span> COOLDOWN = <span class="num">30</span>; <span class="cm">// frames between changes</span>
+
+<span class="kw">type</span> <span class="tp">State</span> = <span class="str">'stable'</span> | <span class="str">'degrading'</span> | <span class="str">'upgrading'</span>;
+
+<span class="cm">// Degradation priority (cheapest to disable first):</span>
+<span class="cm">// 1. SSR off</span>
+<span class="cm">// 2. Shadow resolution halved</span>
+<span class="cm">// 3. SSAO samples reduced</span>
+<span class="cm">// 4. Bloom off</span>
+<span class="cm">// 5. Texture resolution capped</span>
+<span class="cm">// 6. LOD bias increased</span></code></pre>
+
+        <h3>רמות איכות</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Tier</th><th>Shadows</th><th>SSAO</th><th>SSR</th><th>Bloom</th><th>Textures</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="font-weight:600;">Ultra</td><td>2048 PCSS</td><td>32 samples</td><td>On</td><td>On</td><td>4096px</td></tr>
+              <tr><td style="font-weight:600;">High</td><td>2048 PCSS</td><td>16 samples</td><td>On</td><td>On</td><td>2048px</td></tr>
+              <tr><td style="font-weight:600;">Medium</td><td>1024 PCF</td><td>8 samples</td><td>Off</td><td>On</td><td>1024px</td></tr>
+              <tr><td style="font-weight:600;">Low</td><td>512 PCF</td><td>Off</td><td>Off</td><td>Off</td><td>512px</td></tr>
+              <tr><td style="font-weight:600;">Mobile</td><td>Contact only</td><td>Off</td><td>Off</td><td>Off</td><td>512px</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>טקסטורות אדפטיביות (כמו <span class="ltr">Sketchfab</span>)</h3>
+        <pre><code><span class="cm">// texture-manager.ts - Multi-resolution textures</span>
+<span class="cm">// Sketchfab generates 5 resolution tiers per texture:</span>
+<span class="cm">// 256, 512, 1024, 2048, 4096</span>
+<span class="cm">// And selects based on device + viewport size</span>
+
+<span class="kw">function</span> <span class="fn">selectTextureResolution</span>() {
+  <span class="kw">const</span> gpu = navigator.gpu;               <span class="cm">// WebGPU available?</span>
+  <span class="kw">const</span> memory = navigator.deviceMemory;    <span class="cm">// RAM hint</span>
+  <span class="kw">const</span> mobile = /Mobi|Android/i.<span class="fn">test</span>(navigator.userAgent);
+
+  <span class="kw">if</span> (mobile)                   <span class="kw">return</span> <span class="num">512</span>;
+  <span class="kw">if</span> (!gpu || memory &lt; <span class="num">4</span>)      <span class="kw">return</span> <span class="num">1024</span>;
+  <span class="kw">if</span> (memory &gt;= <span class="num">8</span>)             <span class="kw">return</span> <span class="num">4096</span>;
+  <span class="kw">return</span> <span class="num">2048</span>;
+}</code></pre>
+
+        <h3>יעדי ביצועים</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Metric</th><th>Target</th><th>How</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Time to First Pixel</td><td>&lt; 1 second</td><td>Progressive loading stage 1</td></tr>
+              <tr><td>Time to Full Quality</td><td>&lt; 5 seconds</td><td>KTX2 + Draco + WebWorkers</td></tr>
+              <tr><td>FPS (mid-range)</td><td>60fps</td><td>Adaptive quality</td></tr>
+              <tr><td>FPS (mobile)</td><td>30fps</td><td>Aggressive degradation</td></tr>
+              <tr><td>Texture download</td><td>82% reduction</td><td>KTX2 + Basis Universal</td></tr>
+              <tr><td>Geometry download</td><td>90-95% reduction</td><td>Draco compression</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">טכנולוגיות אופציונאליות</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#9889; GPU-Driven Rendering Pipeline</div>
+          <p>
+            במקום שה-<span class="ltr">CPU</span> יחליט מה לצייר &mdash;
+            ה-<span class="ltr">GPU</span> עצמו מבצע <span class="ltr">frustum culling</span>
+            ובחירת <span class="ltr">LOD</span> ב-<span class="ltr">compute shader</span>,
+            ושולח פקודות ציור דרך <span class="ltr">indirect draw buffers</span>.
+            מאפשר רנדור של מיליוני אובייקטים ב-<span class="ltr">60fps</span>.
+          </p>
+          <p>דורש <span class="ltr">WebGPU</span>. יש <a href="https://dk1242.github.io/2025/05/27/Rendering-1M-spheres-4-Frustum-Culling-and-LOD.html" target="_blank">מדריך מפורט</a> עם מימוש.</p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128187; Meshopt Streaming</div>
+          <p>
+            בעוד <span class="ltr">Draco</span> דוחס יותר, <span class="ltr">Meshopt</span>
+            מאפשר <span class="ltr">streaming</span> &mdash; פענוח והצגה של חלקים מהמודל
+            לפני שהקובץ כולו הגיע. אידאלי לטעינה פרוגרסיבית.
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128640; BatchedMesh ב-Three.js</div>
+          <p>
+            <span class="ltr">BatchedMesh</span> (חדש ב-<span class="ltr">r160+</span>)
+            מאפשר ציור של אלפי אובייקטים ב-<span class="ltr">draw call</span> אחד,
+            גם כשיש להם גיאומטריות וחומרים שונים. שיפור ביצועים דרמטי לסצנות מורכבות.
+          </p>
+          <p>
+            <a href="https://tympanus.net/codrops/2024/10/30/interactive-3d-with-three-js-batchedmesh-and-webgpurenderer/" target="_blank">Three.js BatchedMesh + WebGPU Tutorial</a>
+          </p>
+        </div>
+
+        <h3>מקורות</h3>
+        <div class="research-links">
+          <a href="https://evergine.com/ktx2-texture-compression/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Article</div>
+              <div class="link-title">KTX2 Texture Compression Results</div>
+              <div class="link-desc">תוצאות דחיסה: 61MB &rarr; 10.8MB (82.3% reduction)</div>
+            </div>
+          </a>
+          <a href="https://www.donmccurdy.com/2024/02/11/web-texture-formats/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Guide</div>
+              <div class="link-title">Choosing Web Texture Formats</div>
+              <div class="link-desc">השוואת פורמטים: Basis, ASTC, BC7, ETC2</div>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

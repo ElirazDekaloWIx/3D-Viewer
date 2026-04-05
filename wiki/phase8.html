@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 8: Path Tracing - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 8: Path Tracing</h1>
+      <p class="subtitle">מצב איכות גבוהה עם מעקב קרניים ב-<span class="ltr">WebGPU</span> &mdash; רנדר ברמת <span class="ltr">Stager</span></p>
+      <span class="version-badge completed" dir="ltr">v1.0.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          כל מה שבנינו עד עכשיו (שלבים 1-6) הוא <span class="ltr">Rasterization</span> &mdash;
+          "ציור" מהיר שמשתמש בקיצורי דרך כדי להיראות טוב ב-60 פריימים לשנייה.
+          זה מצוין ליומיום, אבל יש גבול לכמה זה יכול להיראות אמי��י.
+        </p>
+        <p>
+          <span class="ltr">Path Tracing</span> הוא הגישה ההפוכה &mdash; <strong>סימולציה אמיתית של אור</strong>.
+          שולחים מיליוני קרני אור וירטואליות מהמצלמה אל הסצנה, ועוקבים אחרי הנתיב שלהן
+          (הקפצות מחומר לחומר). זה מה ש-<span class="ltr">Pixar</span> ו-<span class="ltr">Disney</span>
+          משתמשים בסרטים, ומה ש-<span class="ltr">Substance Stager</span> עושה ל"רנדר סופי".
+        </p>
+
+        <div class="card">
+          <div class="card-title">&#127909; איך זה יעבוד אצלנו</div>
+          <ol>
+            <li>ברירת מחדל: המשתמש רואה את הרנדר המהיר (שלבים 1-6) בזמן-אמת</li>
+            <li>לחיצה על "איכות גבוהה" &mdash; מפעילה את <span class="ltr">Path Tracer</span></li>
+            <li>התמונה מתחילה רועשת ומשתפרת בהדרגה (כמו תמונה שמתחדדת)</li>
+            <li>אחרי 2-5 שניות &mdash; תמונה נקייה וחדה ברמה של <span class="ltr">Stager</span></li>
+            <li>אם המשתמש מזיז את המצלמה &mdash; מתחיל מחדש (מהר)</li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128302; מה זה נותן שאי-אפשר ב-Rasterization?</div>
+          <ul>
+            <li><strong>השתקפויות מרובות</strong> &mdash; מראה שמשתקפת במראה שמשתקפת ב...</li>
+            <li><strong>תאורה גלובלית אמיתית</strong> &mdash; אור שמנתר מקיר אדום מאיר את הקיר הלבן ברוזי</li>
+            <li><strong>קאוסטיקס</strong> &mdash; דפוסי אור שנוצרים כשאור עובר דרך זכוכית או מים</li>
+            <li><strong><span class="ltr">SSS</span> מדויק</strong> &mdash; פיזור אור בתוך עור, שעווה, שיש</li>
+            <li><strong>צללים מושלמים</strong> &mdash; רכים, מדויקים, בלי ארטיפקטים</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">ארכיטקטורת <span class="ltr">Path Tracer</span></div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>רכיבים מרכזיים</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Component</th><th>Technology</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Ray Generation</td><td>WebGPU Compute Shader</td><td>Generate primary rays from camera</td></tr>
+              <tr><td>BVH</td><td>Bounding Volume Hierarchy</td><td>Acceleration structure for ray-triangle intersection</td></tr>
+              <tr><td>BSDF Evaluation</td><td>OpenPBR model (WGSL)</td><td>Material response to light</td></tr>
+              <tr><td>Accumulation</td><td>Temporal blending</td><td>Average samples over time</td></tr>
+              <tr><td>Denoiser</td><td>&Agrave;-trous wavelet</td><td>Clean noisy image using edge-aware blur</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>תהליך רנדור (<span class="ltr">per frame</span>)</h3>
+        <pre><code><span class="cm">// path-tracer.ts - Pseudocode for one sample</span>
+<span class="kw">for each</span> pixel (x, y):
+  ray = <span class="fn">generateRay</span>(camera, x, y, randomOffset)
+  color = (<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>)
+  throughput = (<span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>)
+
+  <span class="kw">for</span> bounce = <span class="num">0</span> <span class="kw">to</span> MAX_BOUNCES:
+    hit = <span class="fn">intersectBVH</span>(ray, scene)
+    <span class="kw">if</span> no hit:
+      color += throughput * <span class="fn">sampleEnvironment</span>(ray.direction)
+      <span class="kw">break</span>
+
+    material = hit.material
+    emission = material.emission
+    color += throughput * emission
+
+    <span class="cm">// Sample BSDF for next bounce direction</span>
+    (newDirection, pdf, bsdfValue) = <span class="fn">sampleBSDF</span>(material, ray, hit)
+    throughput *= bsdfValue / pdf
+
+    <span class="cm">// Russian Roulette termination</span>
+    <span class="kw">if</span> (bounce > <span class="num">3</span>):
+      survivalProb = <span class="fn">max</span>(throughput.r, throughput.g, throughput.b)
+      <span class="kw">if</span> (<span class="fn">random</span>() > survivalProb): <span class="kw">break</span>
+      throughput /= survivalProb
+
+    ray = <span class="tp">Ray</span>(hit.position, newDirection)
+
+  <span class="cm">// Blend with previous samples</span>
+  accumulated[x][y] = <span class="fn">mix</span>(accumulated[x][y], color, <span class="num">1.0</span>/sampleCount)</code></pre>
+
+        <h3>ביטול רעש (<span class="ltr">Denoising</span>)</h3>
+        <p>
+          <span class="ltr">Monte Carlo Path Tracing</span> מייצר רעש (דגימה אקראית).
+          הפתרון: <span class="ltr">&Agrave;-trous wavelet filter</span> &mdash;
+          טשטוש מבוקר שמשתמש בנורמלים ועומק כדי לשמור על קצוות חדים
+          תוך החלקת האזורים השטוחים.
+        </p>
+        <pre><code><span class="cm">// denoiser.ts - 5-iteration edge-aware blur</span>
+<span class="cm">// Uses auxiliary buffers: albedo + normals + depth</span>
+<span class="cm">// At each iteration, step size doubles: 1, 2, 4, 8, 16</span>
+<span class="cm">// Edge weights: exp(-|normal_diff|/sigma_n - |depth_diff|/sigma_d)</span></code></pre>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">מאמרים וטכנולוגיות מתקדמות</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128218; WebGPU Path Tracer עם OpenPBR (ACM Web3D 2024)</div>
+          <p>
+            מאמר אקדמי שמציג <span class="ltr">Path Tracer</span> שרץ בדפדפן
+            עם <span class="ltr">WebGPU Compute Shaders</span> ומודל חומרים <span class="ltr">OpenPBR</span>.
+            ~10ms לדגימה, התכנסות ב-200 דגימות (2 שניות). קוד פתוח.
+          </p>
+          <p>
+            <a href="https://arxiv.org/html/2407.19977v1" target="_blank">ArXiv: Physically-based Path Tracer using WebGPU and OpenPBR</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128640; three-gpu-pathtracer</div>
+          <p>
+            ספריית קוד פתוח שמוסיפה <span class="ltr">Path Tracing</span> ל-<span class="ltr">Three.js</span>.
+            תומכת ב-<span class="ltr">MeshPhysicalMaterial</span>, אם כי ב-<span class="ltr">WebGL2</span> (לא <span class="ltr">WebGPU</span>).
+            מצוין כנקודת התחלה ולהבין את הארכיטקטורה.
+          </p>
+          <p>
+            <a href="https://threejsresources.com/tool/three-js-gpu-pathtracer" target="_blank">Three.js GPU PathTracer</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127752; 3D Gaussian Splatting בדפדפן</div>
+          <p>
+            טכנולוגיה חלופית ל-<span class="ltr">Path Tracing</span> שמייצגת סצנות
+            כ"כתמים גאוסיאניים" (<span class="ltr">splats</span>) במקום משולשים.
+            מאפשרת הצגת סצנות מצולמות (<span class="ltr">NeRF</span>-like) בזמן-אמת בדפדפן.
+          </p>
+          <p>
+            <span class="ltr">Visionary</span> (מעבדת AI של שנחאי) מריץ <span class="ltr">Gaussian Splatting</span>
+            ב-2-16ms לפריים על <span class="ltr">WebGPU</span>, מהיר פי 135 מ-<span class="ltr">WebGL</span>.
+          </p>
+          <p>
+            <a href="https://github.com/Visionary-Laboratory/visionary" target="_blank">GitHub: Visionary</a>
+            &nbsp;|&nbsp;
+            <a href="https://arxiv.org/html/2602.03207" target="_blank">WebSplatter: Cross-Device Gaussian Splatting (2025)</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#129504; ReSTIR &mdash; דגימה חכמה יותר</div>
+          <p>
+            <span class="ltr">ReSTIR</span> (<span class="ltr">Reservoir-based SpatioTemporal Importance Resampling</span>)
+            הוא אלגוריתם של <span class="ltr">NVIDIA</span> שמשפר את יעילות <span class="ltr">Path Tracing</span>
+            על ידי שימוש חוזר בדגימות טובות ממקומות ופריימים סמוכים.
+            מאיץ התכנסות פי 5-10 ביחס לדגימה נאיבית.
+          </p>
+          <p>רלוונטי מאוד אם נרצה לעבור מ-200 דגימות ל-20-50 עם אותה איכות.</p>
+        </div>
+
+        <h3>מקורות</h3>
+        <div class="research-links">
+          <a href="https://www.jamesdrandall.com/posts/building-a-real-time-path-tracer-in-webgpu/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Tutorial</div>
+              <div class="link-title">Building a Real-Time Path Tracer in WebGPU</div>
+              <div class="link-desc">מדריך שלב-אחר-שלב עם BVH ו-denoising</div>
+            </div>
+          </a>
+          <a href="https://github.com/gnikoloff/webgpu-raytracer" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Code</div>
+              <div class="link-title">WebGPU Raytracer (Doom levels at 60fps)</div>
+              <div class="link-desc">Path Tracer שלם ב-compute shaders עם denoising</div>
+            </div>
+          </a>
+          <a href="https://github.com/adobe/openpbr-bsdf" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Reference</div>
+              <div class="link-title">Adobe OpenPBR BSDF Reference Implementation</div>
+              <div class="link-desc">מימוש ייחוס של מודל החומרים לצורך Path Tracing</div>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

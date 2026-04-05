@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 3: חומרי PBR - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 3: חומרי PBR מתקדמים</h1>
+      <p class="subtitle">חומרים פיזיקליים ברמת <span class="ltr">Substance Stager</span> &mdash; שכבת ציפוי, שקיפות, פיזור תת-שטחי, ועוד</p>
+      <span class="version-badge completed" dir="ltr">v0.3.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1: Simple ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          חומרים (<span class="ltr">Materials</span>) הם מה ש"מלביש" את הצורה התלת-ממדית. הם קובעים
+          איך משטח מגיב לאור &mdash; האם הוא מבריק? מט? שקוף? זוהר? משקף?
+        </p>
+        <p>
+          <span class="ltr">PBR</span> (<span class="ltr">Physically Based Rendering</span>) אומר שהחומרים
+          מתנהגים לפי חוקי הפיזיקה של אור אמיתי. זה מה שגורם לתמונה להיראות "נכונה" &mdash;
+          מתכת נראית כמו מתכת, עור כמו עור, זכוכית כמו זכוכית.
+        </p>
+
+        <h3>סוגי החומרים שלנו:</h3>
+
+        <div class="card">
+          <div class="card-title">&#128142; בסיסי &mdash; מתכתי/מחוספס (<span class="ltr">Metallic-Roughness</span>)</div>
+          <p>כל חומר מוגדר על ידי שני מספרים פשוטים:</p>
+          <ul>
+            <li><strong>מתכתיות (<span class="ltr">Metallic</span>)</strong>: 0 = לא מתכת (פלסטיק, עץ, עור), 1 = מתכת (ברזל, זהב, כרום)</li>
+            <li><strong>חספוס (<span class="ltr">Roughness</span>)</strong>: 0 = חלק לחלוטין (מראה), 1 = מחוספס לגמרי (גיר)</li>
+          </ul>
+          <p>זה הבסיס. עם רק שני פרמטרים אלה אפשר כבר ליצור מגוון רחב של חומרים.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#9728; שכבת ציפוי (<span class="ltr">Clearcoat</span>)</div>
+          <p>
+            כמו שכבת לכה שקופה מעל צבע. חשבו על צבע רכב מבריק &mdash; יש את הצבע עצמו,
+            ומעליו שכבה שקופה מבריקה. או ציפורניים עם לק מבריק.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#127783; שקיפות והעברת אור (<span class="ltr">Transmission</span>)</div>
+          <p>
+            זכוכית, מים, קרח, פלסטיק שקוף. האור עובר דרך החומר, ויכול להישבר בדרך
+            (כמו קש שנראה שבור בכוס מים). פרמ��ר <span class="ltr">IOR</span> קובע כמה האור נשבר.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#127774; פיזור תת-שטחי (<span class="ltr">Subsurface Scattering - SSS</span>)</div>
+          <p>
+            כשמכניסים יד מול פנס חזק &mdash; רואים אור אדמדם שמפזר דרך העור. זה <span class="ltr">SSS</span>.
+            קורה גם בשעווה, שיש, חלב, ועלים. האור נכנס לחומר, מנתר בפנים, ויוצא ממקום אחר.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#129526; ברק בד (<span class="ltr">Sheen</span>)</div>
+          <p>
+            הברק הרך שרואים על קטיפה, משי, או ספה מבד כשהאור נופל בזווית.
+            זה שונה מברק מתכתי &mdash; הוא רך ומפוזר, ונראה בעיקר בקצוות.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128260; אנייזוטרופיה (<span class="ltr">Anisotropy</span>)</div>
+          <p>
+            מתכת מוברשת (כמו מקרר נירוסטה) משקפת אור בצורה מוארכת בכיוון ההברשה,
+            לא בצורה עגולה אחידה. גם שיער, סיבי עץ, ותקליטורים מציגים תופעה זו.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#127752; אירידסנס (<span class="ltr">Iridescence</span>)</div>
+          <p>
+            צבעי הקשת שמשתנים בהתאם לזווית הצפייה &mdash; כמו בועות סבון, כנפי פרפר, שמן על מים.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2: Technical ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">מיפוי הרחבות <span class="ltr">KHR</span> ל-<span class="ltr">Three.js</span></div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>טבלת מיפוי: הרחבות <span class="ltr">glTF</span> &harr; <span class="ltr">Three.js</span></h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>KHR Extension</th>
+                <th>MeshPhysicalMaterial</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Clearcoat</td>
+                <td><code>KHR_materials_clearcoat</code></td>
+                <td><code>clearcoat</code>, <code>clearcoatRoughness</code></td>
+              </tr>
+              <tr>
+                <td>Transmission</td>
+                <td><code>KHR_materials_transmission</code></td>
+                <td><code>transmission</code>, <code>thickness</code></td>
+              </tr>
+              <tr>
+                <td>SSS / Volume</td>
+                <td><code>KHR_materials_volume</code></td>
+                <td><code>attenuationDistance</code>, <code>attenuationColor</code></td>
+              </tr>
+              <tr>
+                <td>Sheen</td>
+                <td><code>KHR_materials_sheen</code></td>
+                <td><code>sheen</code>, <code>sheenRoughness</code>, <code>sheenColor</code></td>
+              </tr>
+              <tr>
+                <td>Anisotropy</td>
+                <td><code>KHR_materials_anisotropy</code></td>
+                <td><code>anisotropy</code>, <code>anisotropyRotation</code></td>
+              </tr>
+              <tr>
+                <td>IOR</td>
+                <td><code>KHR_materials_ior</code></td>
+                <td><code>ior</code></td>
+              </tr>
+              <tr>
+                <td>Specular</td>
+                <td><code>KHR_materials_specular</code></td>
+                <td><code>specularIntensity</code>, <code>specularColor</code></td>
+              </tr>
+              <tr>
+                <td>Iridescence</td>
+                <td><code>KHR_materials_iridescence</code></td>
+                <td><code>iridescence</code>, <code>iridescenceIOR</code></td>
+              </tr>
+              <tr>
+                <td>Emissive</td>
+                <td><code>KHR_materials_emissive_strength</code></td>
+                <td><code>emissiveIntensity</code></td>
+              </tr>
+              <tr>
+                <td>Unlit</td>
+                <td><code>KHR_materials_unlit</code></td>
+                <td>Switch to <code>MeshBasicMaterial</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box note">
+          <div class="info-box-title">&#128161; הערה</div>
+          <p>
+            <span class="ltr">GLTFLoader</span> של <span class="ltr">Three.js</span> מטפל ברוב ההרחבות אוטומטית בגרסאות אחרונות.
+            מערכת החומרים שלנו מוסיפה יכולת עריכה בזמן-ריצה ושליטה עדינה יותר.
+          </p>
+        </div>
+
+        <h3>קוד דוגמה: יצירת חומר זכוכית</h3>
+        <pre><code><span class="cm">// Glass material with transmission + IOR</span>
+<span class="kw">const</span> glassMaterial = <span class="kw">new</span> <span class="tp">MeshPhysicalMaterial</span>({
+  color: <span class="num">0xffffff</span>,
+  metalness: <span class="num">0</span>,
+  roughness: <span class="num">0.05</span>,
+  transmission: <span class="num">1.0</span>,     <span class="cm">// Fully transparent</span>
+  thickness: <span class="num">0.5</span>,        <span class="cm">// Refraction depth</span>
+  ior: <span class="num">1.5</span>,              <span class="cm">// Glass IOR</span>
+  attenuationDistance: <span class="num">0.5</span>,
+  attenuationColor: <span class="kw">new</span> <span class="tp">Color</span>(<span class="num">0xddeeff</span>), <span class="cm">// Slight blue tint</span>
+});</code></pre>
+
+        <h3>קוד דוגמה: חומר צבע רכב (<span class="ltr">Clearcoat</span>)</h3>
+        <pre><code><span class="cm">// Car paint with clearcoat</span>
+<span class="kw">const</span> carPaint = <span class="kw">new</span> <span class="tp">MeshPhysicalMaterial</span>({
+  color: <span class="num">0xcc0000</span>,       <span class="cm">// Deep red</span>
+  metalness: <span class="num">0.9</span>,
+  roughness: <span class="num">0.4</span>,
+  clearcoat: <span class="num">1.0</span>,        <span class="cm">// Full clearcoat layer</span>
+  clearcoatRoughness: <span class="num">0.1</span>, <span class="cm">// Very smooth coat</span>
+});</code></pre>
+
+        <h3><span class="ltr">BRDF</span> &mdash; מודל <span class="ltr">Cook-Torrance</span></h3>
+        <p>
+          <span class="ltr">Three.js</span> משתמש במודל <span class="ltr">Cook-Torrance BRDF</span> לחישוב האינטראקציה
+          בין אור לחומר. המודל מורכב משלושה חלקים:
+        </p>
+        <ul>
+          <li><strong><span class="ltr">D</span> &mdash; <span class="ltr">Normal Distribution (GGX)</span></strong>: מתאר את התפלגות הפני-שטח הזעירים (<span class="ltr">microfacets</span>). חומר חלק = רוב הפנים מיושרים.</li>
+          <li><strong><span class="ltr">G</span> &mdash; <span class="ltr">Geometry (Schlick-GGX)</span></strong>: מודל הצללה עצמית של הפני-שטח הזעירים. חומר מחוספס = יותר הסתרה.</li>
+          <li><strong><span class="ltr">F</span> &mdash; <span class="ltr">Fresnel (Schlick)</span></strong>: חישוב כמה אור מוחזר מול כמה נספג, בהתאם לזווית. במבט ישיר &mdash; פחות השתקפות. בזווית חדה &mdash; יותר (כמו אגם שנראה כמו מראה כשמסתכלים מרחוק).</li>
+        </ul>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3: Research ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">טכנולוגיות אופציונאליות ומאמרים שווים</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128218; OpenPBR &mdash; סטנדרט החומרים הבא</div>
+          <p>
+            <span class="ltr">OpenPBR</span> הוא סטנדרט חדש של <span class="ltr">ASWF</span>
+            (<span class="ltr">Academy Software Foundation</span>) שמאחד את מודלי החומרים של
+            <span class="ltr">Adobe Standard Material</span>, <span class="ltr">Autodesk Standard Surface</span>,
+            ו-<span class="ltr">Pixar's MaterialX</span>. יש מימוש ייחוס קוד פתוח של <span class="ltr">Adobe</span>.
+          </p>
+          <p>
+            זה כולל חישובים מתקדמים של <span class="ltr">subsurface scattering</span>
+            (מעבר אקראי בנפח &mdash; <span class="ltr">random walk</span>),
+            דיספרסיה (פיצול צבעים דרך זכוכית, כמו פריזמה), ושכבת <span class="ltr">fuzz/sheen</span>.
+          </p>
+          <p>
+            <strong>רלוונטיות:</strong> ב-<span class="ltr">Phase 8</span> (<span class="ltr">Path Tracing</span>)
+            נוכל להשתמש ב-<span class="ltr">OpenPBR BSDF</span> לחישוב חומרים מדויק יותר.
+          </p>
+          <p>
+            <a href="https://github.com/adobe/openpbr-bsdf" target="_blank">GitHub: Adobe OpenPBR BSDF Reference</a>
+            &nbsp;|&nbsp;
+            <a href="https://academysoftwarefoundation.github.io/OpenPBR/" target="_blank">OpenPBR Surface Spec</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#129695; Enterprise PBR &mdash; Dassault Syst&egrave;mes</div>
+          <p>
+            <span class="ltr">Dassault</span> (יוצרי <span class="ltr">SolidWorks</span>) פיתחו
+            <span class="ltr">Enterprise PBR Shading Model</span> &mdash; מודל חומרים מקיף שמכסה
+            תעשיית הרכב, אופנה, ומוצרי צריכה. כולל מפרט מפורט מאוד של כל תכונות החומר
+            עם נוסחאות מתמטיות, שימושי מאוד כרפרנס.
+          </p>
+          <p>
+            <a href="https://dassaultsystemes-technology.github.io/EnterprisePBRShadingModel/user_guide.md.html" target="_blank">Enterprise PBR User Guide</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128302; Multiscattering &mdash; שיפור דיוק ההשתקפויות</div>
+          <p>
+            מודל <span class="ltr">Cook-Torrance</span> הסטנדרטי מתעלם מקפיצות אור מרובות
+            בתוך הפני-שטח הזעירים (<span class="ltr">microfacets</span>). זה גורם לאובדן אנרגיה &mdash;
+            חומרים מחוספסים נראים חשוכים מדי. פתרון: <span class="ltr">Multiscattering GGX</span>
+            שמפצה על האנרגיה האבודה.
+          </p>
+          <p>
+            <span class="ltr">Three.js</span> כבר כולל קירוב של פיצוי אנרגיה,
+            אבל מימוש מלא עם <span class="ltr">LUT</span> (טבלת חיפוש מחושבת מראש) ייתן תוצאות מדויקות יותר.
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127912; Dispersion &mdash; שבירת צבעים</div>
+          <p>
+            כשאור עובר דרך זכוכית או יהלום, כל צבע נשבר בזווית אחרת &mdash; זה מה שיוצר
+            קשת בפריזמה ואת ה"אש" ביהלומים. <span class="ltr">Three.js</span> הוסיף תמיכה ב-<span class="ltr">dispersion</span>
+            דרך <code>MeshPhysicalMaterial.dispersion</code>.
+          </p>
+          <p>
+            <strong>שווה לשלב:</strong> במיוחד להצגת תכשיטים, כלי זכוכית, וגבישים.
+          </p>
+        </div>
+
+        <h3>מקורות נוספים</h3>
+        <div class="research-links">
+          <a href="https://marmoset.co/posts/physically-based-rendering-and-you-too/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Article</div>
+              <div class="link-title">PBR and You &mdash; Marmoset</div>
+              <div class="link-desc">הסבר ויזואלי מצוין של עקרונות PBR</div>
+            </div>
+          </a>
+          <a href="https://learnopengl.com/PBR/Theory" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Tutorial</div>
+              <div class="link-title">LearnOpenGL: PBR Theory</div>
+              <div class="link-desc">הסבר מתמטי מפורט של Cook-Torrance BRDF</div>
+            </div>
+          </a>
+          <a href="https://helpx.adobe.com/substance-3d-sampler/features-and-workflows/adobe-standard-material.html" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Docs</div>
+              <div class="link-title">Adobe Standard Material Reference</div>
+              <div class="link-desc">מפרט החומר של Adobe &mdash; הבסיס ל-OpenPBR</div>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

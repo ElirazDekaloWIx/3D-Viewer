@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Viewer - מסמכי פיתוח</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>3D Viewer</h1>
+      <p class="subtitle">
+        כלי מקצועי להצגת מודלים תלת-ממדיים ברשת &mdash;
+        מהיר כמו <span class="ltr">Sketchfab</span>, איכותי כמו <span class="ltr">Substance Stager</span>
+      </p>
+      <span class="version-badge pending" dir="ltr">v0.1.0 &middot; Phase 0 - Documentation</span>
+    </div>
+
+    <!-- ===== Vision ===== -->
+    <section>
+      <h2>החזון</h2>
+      <p>
+        לבנות <strong>ויואר תלת-ממדי מבוסס-דפדפן</strong> שמשלב שני עולמות שנראים סותרים:
+        <strong>ביצועים מהירים</strong> של פלטפורמות כמו <span class="ltr">Sketchfab</span> (טעינה מיידית, התאמה למכשיר, אופטימיזציות אוטומטיות)
+        עם <strong>איכות רנדר פוטוריאליסטית</strong> של כלים כמו <span class="ltr">Adobe Substance Stager</span>
+        (חומרים מתקדמים, תאורה מבוססת סביבה, צללים רכים, <span class="ltr">Path Tracing</span>).
+      </p>
+    </section>
+
+    <!-- ===== Tech Stack ===== -->
+    <section>
+      <h2>ערימת טכנולוגיות</h2>
+      <div class="tech-stack">
+        <div class="tech-item">
+          <div class="tech-name">Three.js r171+</div>
+          <div class="tech-role">מנוע רנדור</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-name">WebGPU / WebGL2</div>
+          <div class="tech-role">שכבת גרפיקה</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-name">TypeScript</div>
+          <div class="tech-role">שפת פיתוח</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-name">Vite</div>
+          <div class="tech-role">כלי בנייה</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-name">glTF 2.0</div>
+          <div class="tech-role">פורמט מודלים</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Phases ===== -->
+    <section>
+      <h2>שלבי פיתוח</h2>
+      <p>הפרויקט מחולק ל-9 שלבים, כל אחד מתמקד בשכבה אחרת של מערכת הרנדור:</p>
+
+      <div class="phases-grid">
+
+        <a href="phase1.html" class="phase-card">
+          <div class="phase-number">PHASE 1</div>
+          <div class="phase-title">יסודות</div>
+          <div class="phase-desc">
+            רנדרר, טעינת מודלים, בקרת מצלמה. הבסיס שעליו הכל נבנה.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+        <a href="phase2.html" class="phase-card">
+          <div class="phase-number">PHASE 2</div>
+          <div class="phase-title">תאורה</div>
+          <div class="phase-desc">
+            תאורה מבוססת סביבה (<span class="ltr">IBL</span>), מפות <span class="ltr">HDR</span>, סטי תאורת סטודיו.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+        <a href="phase3.html" class="phase-card">
+          <div class="phase-number">PHASE 3</div>
+          <div class="phase-title">חומרי PBR</div>
+          <div class="phase-desc">
+            חומרים פיזיקליים מתקדמים: שכבת ציפוי, שקיפות, פיזור תת-שטחי, ברק בד, אנייזוטרופיה.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+        <a href="phase4.html" class="phase-card">
+          <div class="phase-number">PHASE 4</div>
+          <div class="phase-title">צללים</div>
+          <div class="phase-desc">
+            צללים רכים מציאותיים עם <span class="ltr">PCSS</span> ומיפוי צללים מדורג.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+        <a href="phase5.html" class="phase-card">
+          <div class="phase-number">PHASE 5</div>
+          <div class="phase-title">Post-Processing</div>
+          <div class="phase-desc">
+            אפקטים שנותנים את ה"מראה המקצועי": <span class="ltr">SSAO</span>, <span class="ltr">Bloom</span>, <span class="ltr">SSR</span>, מיפוי גוונים.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+        <a href="phase6.html" class="phase-card">
+          <div class="phase-number">PHASE 6</div>
+          <div class="phase-title">ביצועים</div>
+          <div class="phase-desc">
+            איכות אדפטיבית, טעינה פרוגרסיבית, דחיסת טקסטורות, <span class="ltr">LOD</span>.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+        <a href="phase7.html" class="phase-card">
+          <div class="phase-number">PHASE 7</div>
+          <div class="phase-title">API</div>
+          <div class="phase-desc">
+            ממשק ציבורי נקי ל-3 שורות שימוש. דוגמאות ותיעוד.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+        <a href="phase8.html" class="phase-card">
+          <div class="phase-number">PHASE 8</div>
+          <div class="phase-title">Path Tracing</div>
+          <div class="phase-desc">
+            מצב איכות גבוהה עם <span class="ltr">WebGPU</span> מעקב קרניים, <span class="ltr">OpenPBR</span>, ביטול רעש בזמן-אמת.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+        <a href="phase9.html" class="phase-card">
+          <div class="phase-number">PHASE 9</div>
+          <div class="phase-title">אנימציה</div>
+          <div class="phase-desc">
+            תמיכה באנימציות שלד ומורף &mdash; דמויות, מוצרים עם חלקים נעים.
+          </div>
+          <span class="status-indicator pending">&#9675; טרם התחיל</span>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ===== Pipeline Overview ===== -->
+    <section>
+      <h2>תהליך הרנדור &mdash; מקובץ לפיקסל</h2>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-icon">&#128230;</div>
+          <div>Model File (.glb / .gltf)</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#9881;</div>
+          <div>Draco Decompress (WebWorker) + KTX2 Transcode (WebWorker)</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#128295;</div>
+          <div>GLTFLoader &rarr; Scene Graph Assembly</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#127912;</div>
+          <div>Material System: KHR Extensions &rarr; MeshPhysicalMaterial</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#9728;</div>
+          <div>HDR Environment (PMREM) + Light Rig</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#127753;</div>
+          <div>PCSS Shadow Maps</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#128248;</div>
+          <div>Renderer &rarr; Framebuffer</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#10024;</div>
+          <div>Post-Processing: SSAO &rarr; SSR &rarr; Bloom &rarr; Tone Map &rarr; AA</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#128421;</div>
+          <div>Final Pixel &rarr; sRGB Display</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Key Goals ===== -->
+    <section>
+      <h2>יעדי הפרויקט</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">&#9889; ביצועים</div>
+        </div>
+        <ul>
+          <li>הצגה ראשונית תוך פחות משנייה (<span class="ltr">Time to First Pixel &lt; 1s</span>)</li>
+          <li>איכות מלאה תוך 5 שניות למודלים רגילים</li>
+          <li><span class="ltr">60fps</span> על מכשירים בינוניים עם איכות אדפטיבית</li>
+          <li>דחיסת טקסטורות של עד 82% (<span class="ltr">KTX2 + Basis Universal</span>)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">&#127912; איכות</div>
+        </div>
+        <ul>
+          <li>תמיכה מלאה בכל הרחבות חומרי <span class="ltr">glTF KHR</span> (10 סוגי חומר)</li>
+          <li>צללים רכים עם <span class="ltr">PCSS</span> (פנומברה פיזיקלית נכונה)</li>
+          <li>תאורת <span class="ltr">IBL</span> עם מפות <span class="ltr">HDR</span></li>
+          <li>מצב <span class="ltr">Path Tracing</span> לרנדר ברמת <span class="ltr">Stager</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">&#127760; תאימות</div>
+        </div>
+        <ul>
+          <li><span class="ltr">WebGPU</span> ראשי עם נפילה ל-<span class="ltr">WebGL2</span></li>
+          <li>תמיכה ב-<span class="ltr">Chrome, Edge, Firefox, Safari</span></li>
+          <li>אדפטיבי למובייל, טאבלט, ודסקטופ</li>
+          <li>כל סוגי המודלים: מוצרים, דמויות, ארכיטקטורה</li>
+        </ul>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="nav.js"></script>
+</body>
+</html>

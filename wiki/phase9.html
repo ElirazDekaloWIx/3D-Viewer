@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 9: אנימציה - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 9: אנימציה</h1>
+      <p class="subtitle">תמיכה באנימציות שלד ומורף &mdash; דמויות, מוצרים עם חלקים נעים</p>
+      <span class="version-badge completed" dir="ltr">v1.0.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          מודלים תלת-ממדיים יכולים לזוז! דמות שהולכת, מוצר שמתקפל,
+          דלת שנפתחת, גלגל שמסתובב. קובץ <span class="ltr">glTF</span>
+          יכול להכיל אנימציות מובנות, ואנחנו צריכים לדעת להשמיע אותן.
+        </p>
+
+        <div class="card">
+          <div class="card-title">&#129524; אנימציית של�� (<span class="ltr">Skeletal Animation</span>)</div>
+          <p>
+            כמו בובת מריונטה &mdash; יש "שלד" (מערכת עצמות) בתוך המודל,
+            והעור (הגיאומטריה) נע בהתאם לעצמות. ככה דמויות הולכות, מניפות ידיים, ומסתובבות.
+            כל תנועה מוגדרת כ"קליפ" (<span class="ltr">Animation Clip</span>) שאפשר להפעיל, לעצור, ולערבב.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128171; אנימציית מורף (<span class="ltr">Morph Targets</span>)</div>
+          <p>
+            במקום שלד, הצורה עצמה "מתעוותת" בין מצבים שונים. חשבו על פרצוף &mdash;
+            מצב אחד חייכני, מצב אחד עצוב, מצב אחד מופתע. על ידי ערבוב (0% עד 100%)
+            בין המצבים, אפשר ליצור כל הבעה. נפוץ גם ל-<span class="ltr">blend shapes</span>
+            בתעשיית הקולנוע.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">מימוש עם <span class="ltr">AnimationMixer</span></div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3><span class="ltr">Three.js Animation System</span></h3>
+        <pre><code><span class="cm">// animation-manager.ts</span>
+<span class="kw">import</span> { AnimationMixer, AnimationClip, LoopRepeat } <span class="kw">from</span> <span class="str">'three'</span>;
+
+<span class="kw">export class</span> <span class="tp">AnimationManager</span> {
+  <span class="kw">private</span> mixer: <span class="tp">AnimationMixer</span>;
+  <span class="kw">private</span> clips: <span class="tp">Map</span>&lt;string, AnimationAction&gt; = <span class="kw">new</span> <span class="tp">Map</span>();
+  <span class="kw">private</span> activeAction: AnimationAction | <span class="kw">null</span> = <span class="kw">null</span>;
+
+  <span class="fn">init</span>(model, gltfAnimations: AnimationClip[]) {
+    <span class="kw">this</span>.mixer = <span class="kw">new</span> <span class="tp">AnimationMixer</span>(model);
+
+    <span class="kw">for</span> (<span class="kw">const</span> clip <span class="kw">of</span> gltfAnimations) {
+      <span class="kw">const</span> action = <span class="kw">this</span>.mixer.<span class="fn">clipAction</span>(clip);
+      <span class="kw">this</span>.clips.<span class="fn">set</span>(clip.name, action);
+    }
+  }
+
+  <span class="fn">play</span>(name: string, crossFade = <span class="num">0.3</span>) {
+    <span class="kw">const</span> action = <span class="kw">this</span>.clips.<span class="fn">get</span>(name);
+    <span class="kw">if</span> (!action) <span class="kw">return</span>;
+
+    <span class="kw">if</span> (<span class="kw">this</span>.activeAction) {
+      action.<span class="fn">reset</span>().<span class="fn">crossFadeFrom</span>(<span class="kw">this</span>.activeAction, crossFade, <span class="kw">true</span>);
+    }
+    action.<span class="fn">play</span>();
+    <span class="kw">this</span>.activeAction = action;
+  }
+
+  <span class="fn">update</span>(deltaTime: number) {
+    <span class="kw">this</span>.mixer?.<span class="fn">update</span>(deltaTime);
+  }
+
+  <span class="fn">getClipNames</span>(): string[] {
+    <span class="kw">return</span> Array.<span class="fn">from</span>(<span class="kw">this</span>.clips.<span class="fn">keys</span>());
+  }
+}</code></pre>
+
+        <h3>שילוב בלולאת רנדור</h3>
+        <pre><code><span class="cm">// In the render loop:</span>
+<span class="kw">const</span> clock = <span class="kw">new</span> <span class="tp">Clock</span>();
+
+<span class="kw">function</span> <span class="fn">animate</span>() {
+  <span class="kw">const</span> delta = clock.<span class="fn">getDelta</span>();
+  animationManager.<span class="fn">update</span>(delta);
+  renderer.<span class="fn">render</span>(scene, camera);
+  <span class="fn">requestAnimationFrame</span>(animate);
+}</code></pre>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">טכנולוגיות עתידיות</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#129524; GPU Skinning ב-Compute Shaders</div>
+          <p>
+            אנימציית שלד סטנדרטית מחשבת תנוחות על ה-<span class="ltr">CPU</span>
+            או ב-<span class="ltr">vertex shader</span>. עם <span class="ltr">WebGPU Compute Shaders</span>
+            אפשר לבצע את החישוב ב-<span class="ltr">compute pass</span> נפרד &mdash;
+            מאפשר הנפשה של עשרות אלפי דמויות במקביל (חשוב לסצנות עם המונים).
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127916; glTF Animation Pointer Extension</div>
+          <p>
+            הרחבה חדשה (<span class="ltr">KHR_animation_pointer</span>) שמאפשרת
+            להנפיש כל תכונה של כל אובייקט בסצנה &mdash; לא רק טרנספורמציות ומורפים,
+            אלא גם צבעים של חומרים, עוצמת אור, מיקום מצלמה, וכו'.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

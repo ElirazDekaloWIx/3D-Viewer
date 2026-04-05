@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ספריית חומרי PBR - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>ספריית חומרי PBR</h1>
+      <p class="subtitle">מקורות חינמיים, שילוב עם הוויואר, ותכנון מערכת חומרים</p>
+      <span class="version-badge in-progress" dir="ltr">Research &middot; Planning</span>
+    </div>
+
+    <!-- ==================== LAYER 1: Simple ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה חומרי PBR ולמה צריך ספרייה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          חומר <span class="ltr">PBR</span> הוא "עור" דיגיטלי שמגדיר איך משטח נראה &mdash;
+          עץ, מתכת, בד, אבן, פלסטיק. כל חומר מורכב מ-5-6 תמונות ("מפות") שאומרות למנוע הרנדור:
+        </p>
+        <ul>
+          <li><strong>צבע (<span class="ltr">Albedo</span>)</strong> &mdash; הצבע הבסיסי, בלי צללים או השתקפויות</li>
+          <li><strong>נורמל (<span class="ltr">Normal</span>)</strong> &mdash; פרטי שטח מזויפים שיוצרים תחושת עומק בלי גיאומטריה נוספת</li>
+          <li><strong>חספוס (<span class="ltr">Roughness</span>)</strong> &mdash; כמה המשטח מחוספס (מראה = 0, גיר = 1)</li>
+          <li><strong>מתכתיות (<span class="ltr">Metalness</span>)</strong> &mdash; האם זה מתכת (1) או לא (0)</li>
+          <li><strong>הסתרה סביבתית (<span class="ltr">AO</span>)</strong> &mdash; צללים עדינים בחריצים ופינות</li>
+          <li><strong>גובה (<span class="ltr">Displacement</span>)</strong> &mdash; שינוי גיאומטרי אמיתי של המשטח (אופציונלי, כבד)</li>
+        </ul>
+
+        <p>
+          <strong>למה ספרייה?</strong> כדי שהמשתמש יוכל לבחור חומר (לחץ "עץ אלון" או "שיש לבן")
+          ולראות אותו מיד על המודל שלו. כמו בחירת צבע בפוטושופ, אבל לתלת-ממד.
+        </p>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2: Technical ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">מקורות, <span class="ltr">APIs</span>, שילוב עם <span class="ltr">Three.js</span></div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>מקורות חומרים חינמיים (<span class="ltr">CC0</span>)</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Source</th><th>License</th><th>Materials</th><th>API</th><th>Resolutions</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a href="https://ambientcg.com" target="_blank">ambientCG</a></td>
+                <td style="color: var(--accent-green);">CC0</td>
+                <td>2,000+</td>
+                <td style="color: var(--accent-green);">Yes (REST)</td>
+                <td>256 - 8K</td>
+              </tr>
+              <tr>
+                <td><a href="https://polyhaven.com/textures" target="_blank">Poly Haven</a></td>
+                <td style="color: var(--accent-green);">CC0</td>
+                <td>1,700+</td>
+                <td style="color: var(--accent-green);">Yes (REST)</td>
+                <td>1K - 8K</td>
+              </tr>
+              <tr>
+                <td><a href="https://www.sharetextures.com" target="_blank">ShareTextures</a></td>
+                <td style="color: var(--accent-green);">CC0</td>
+                <td>1,500+</td>
+                <td>No</td>
+                <td>Up to 4K</td>
+              </tr>
+              <tr>
+                <td><a href="https://freepbr.com" target="_blank">FreePBR</a></td>
+                <td>Free (custom)</td>
+                <td>100s</td>
+                <td>No</td>
+                <td>2K - 4K</td>
+              </tr>
+              <tr>
+                <td><a href="https://www.cgbookcase.com" target="_blank">cgbookcase</a></td>
+                <td style="color: var(--accent-green);">CC0</td>
+                <td>500+</td>
+                <td>No</td>
+                <td>Up to 4K</td>
+              </tr>
+              <tr>
+                <td><a href="https://3dtextures.me" target="_blank">3DTextures.me</a></td>
+                <td style="color: var(--accent-green);">CC0</td>
+                <td>100s</td>
+                <td>No</td>
+                <td>1K - 2K</td>
+              </tr>
+              <tr>
+                <td><a href="https://pbrmaterials.com" target="_blank">PBRMaterials</a></td>
+                <td style="color: var(--accent-green);">CC0</td>
+                <td>Growing</td>
+                <td>No</td>
+                <td>Multiple</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box tip">
+          <div class="info-box-title">&#128313; המלצה: ambientCG כמקור ראשי</div>
+          <p>
+            הספרייה הגדולה ביותר (2,000+), רישיון <span class="ltr">CC0</span> מלא,
+            <span class="ltr">API</span> זמין, ומציע רזולוציות קטנות (256/512) שמושלמות לווב.
+            <span class="ltr">Poly Haven</span> כמשלים &mdash; מצוין לאיכות גבוהה + <span class="ltr">HDRIs</span>.
+          </p>
+        </div>
+
+        <h3>שילוב עם <span class="ltr">Three.js</span></h3>
+        <pre><code><span class="cm">// Loading a PBR texture set</span>
+<span class="kw">const</span> loader = <span class="kw">new</span> <span class="tp">THREE.TextureLoader</span>();
+
+<span class="cm">// Load all maps</span>
+<span class="kw">const</span> albedo = loader.<span class="fn">load</span>(<span class="str">'/materials/wood_oak/albedo.jpg'</span>);
+<span class="kw">const</span> normal = loader.<span class="fn">load</span>(<span class="str">'/materials/wood_oak/normal.jpg'</span>);
+<span class="kw">const</span> roughness = loader.<span class="fn">load</span>(<span class="str">'/materials/wood_oak/roughness.jpg'</span>);
+<span class="kw">const</span> ao = loader.<span class="fn">load</span>(<span class="str">'/materials/wood_oak/ao.jpg'</span>);
+
+<span class="cm">// CRITICAL: Only albedo gets sRGB color space</span>
+albedo.colorSpace = THREE.SRGBColorSpace;
+
+<span class="cm">// Create PBR material</span>
+<span class="kw">const</span> material = <span class="kw">new</span> <span class="tp">THREE.MeshStandardMaterial</span>({
+  map: albedo,
+  normalMap: normal,
+  roughnessMap: roughness,
+  aoMap: ao,
+});
+
+<span class="cm">// Tiling</span>
+[albedo, normal, roughness, ao].<span class="fn">forEach</span>(tex =&gt; {
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.<span class="fn">set</span>(<span class="num">4</span>, <span class="num">4</span>);
+});</code></pre>
+
+        <h3><span class="ltr">ambientCG API</span> &mdash; שליפת חומרים</h3>
+        <pre><code><span class="cm">// Fetch material list from ambientCG API</span>
+<span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(
+  <span class="str">'https://ambientcg.com/api/v2/full_json?type=Material&limit=20&include=downloadData'</span>
+);
+<span class="kw">const</span> data = <span class="kw">await</span> res.<span class="fn">json</span>();
+
+<span class="cm">// Each item has download URLs for each resolution</span>
+data.foundAssets.<span class="fn">forEach</span>(asset =&gt; {
+  console.<span class="fn">log</span>(asset.assetId, asset.downloadFolders);
+  <span class="cm">// e.g. "WoodFloor051" with 1K, 2K, 4K ZIPs</span>
+});</code></pre>
+
+        <h3>תכנון מערכת חומרים לוויואר</h3>
+
+        <div class="card">
+          <div class="card-title">&#127912; רכיבי המערכת</div>
+          <ol>
+            <li><strong>קטלוג חומרים</strong> &mdash; רשימה עם thumbnails, חיפוש וסינון לפי קטגוריה</li>
+            <li><strong>Material Loader</strong> &mdash; טוען ZIP מ-ambientCG, פורק את כל המפות, יוצר MeshStandardMaterial</li>
+            <li><strong>Material Applicator</strong> &mdash; מחיל חומר על mesh נבחר או על כל המודל</li>
+            <li><strong>Preview Sphere</strong> &mdash; כדור תצוגה מקדימה עם IBL (כמו ב-ambientCG)</li>
+            <li><strong>פרמטרים</strong> &mdash; סליידרים ל-tiling, normal strength, roughness multiplier</li>
+          </ol>
+        </div>
+
+        <h3>ביצועים &mdash; גודל טקסטורות</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Resolution</th><th>VRAM per texture</th><th>Recommended Use</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>256x256</td><td>~256 KB</td><td>Thumbnails, mobile, distant objects</td></tr>
+              <tr><td>512x512</td><td>~1 MB</td><td>Background elements, mobile</td></tr>
+              <tr><td>1024x1024</td><td>~4 MB</td><td>Standard web (recommended default)</td></tr>
+              <tr><td>2048x2048</td><td>~16 MB</td><td>Hero objects, close-up views</td></tr>
+              <tr><td>4096x4096</td><td>~64 MB</td><td>Very detailed close-ups only</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          סט <span class="ltr">PBR</span> מלא (5 מפות) ב-<span class="ltr">2K</span> = ~80MB VRAM.
+          <strong>שימוש ב-<span class="ltr">KTX2</span> מקטין פי 10.</strong>
+        </p>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3: Research ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">טכנולוגיות מתקדמות לעתיד</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128230; KTX2 Texture Compression</div>
+          <p>
+            במקום JPG/PNG שנפרסים ב-GPU ל-RGBA מלא, <span class="ltr">KTX2</span> (עם <span class="ltr">Basis Universal</span>)
+            נשאר דחוס בזיכרון ה-GPU. הקטנה של פי 10 ב-VRAM.
+            <span class="ltr">Three.js KTX2Loader</span> תומך בזה ישירות.
+          </p>
+          <p>
+            <strong>תהליך:</strong> המרה מ-JPG ל-KTX2 עם <code>toktx</code> (כלי של Khronos)
+            או <code>basisu</code>. אפשר לעשות בצד השרת או כ-build step.
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128218; MaterialX + OpenPBR</div>
+          <p>
+            <span class="ltr">MaterialX</span> הוא פורמט תיאור חומרים של <span class="ltr">ASWF</span>
+            (שמשמש את <span class="ltr">Disney, Pixar, ILM</span>).
+            <span class="ltr">Three.js</span> יש <code>MaterialXLoader</code> אבל <strong>רק ל-WebGPU</strong> כרגע.
+          </p>
+          <p>
+            בעתיד, אפשר יהיה לייבא קבצי <span class="ltr">.mtlx</span> ישירות
+            ולקבל חומרים ברמת <span class="ltr">Stager/Blender</span> בוויואר.
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128302; Procedural Materials (Noise-based)</div>
+          <p>
+            במקום טקסטורות מבוססות תמונה, אפשר ליצור חומרים פרוצדורליים
+            ב-<span class="ltr">TSL</span> (<span class="ltr">Three Shader Language</span>):
+            שיש, עץ, חול, מים &mdash; הכל מחושב מתמטית ב-shader.
+          </p>
+          <p>
+            <strong>יתרונות:</strong> אין הורדת טקסטורות, רזולוציה אינסופית, אפשרות לאנימציה.
+            <strong>חסרונות:</strong> עלות GPU גבוהה יותר, מוגבל לדפוסים מתמטיים.
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#129520; cc0textures-threejs (npm)</div>
+          <p>
+            ספריית קוד פתוח שטוענת חומרים מ-<span class="ltr">ambientCG</span> ישירות ל-<span class="ltr">Three.js</span>.
+            <code>CC0MaterialLoader</code> מוריד ZIP, פורק, ומחזיר <code>MeshStandardMaterial</code> מוכן.
+          </p>
+          <p>
+            <a href="https://github.com/repalash/cc0textures-threejs" target="_blank">GitHub: cc0textures-threejs</a>
+            &nbsp;|&nbsp;
+            <a href="https://repalash.github.io/cc0textures-threejs/" target="_blank">Live Demo</a>
+          </p>
+        </div>
+
+        <h3>מקורות</h3>
+        <div class="research-links">
+          <a href="https://ambientcg.com" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Library</div>
+              <div class="link-title">ambientCG &mdash; 2,000+ CC0 Materials</div>
+              <div class="link-desc">הספרייה הגדולה ביותר, עם API, רזולוציות 256-8K</div>
+            </div>
+          </a>
+          <a href="https://polyhaven.com/textures" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Library</div>
+              <div class="link-title">Poly Haven Textures + HDRIs</div>
+              <div class="link-desc">CC0, איכות גבוהה, API, גם HDRIs לתאורה</div>
+            </div>
+          </a>
+          <a href="https://docs.ambientcg.com/api/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">API Docs</div>
+              <div class="link-title">ambientCG REST API v2</div>
+              <div class="link-desc">חיפוש, סינון, ו-download URLs לכל חומר</div>
+            </div>
+          </a>
+          <a href="https://github.com/Poly-Haven/Public-API" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">API Docs</div>
+              <div class="link-title">Poly Haven Public API</div>
+              <div class="link-desc">OpenAPI/Swagger, download URLs, metadata</div>
+            </div>
+          </a>
+          <a href="https://www.donmccurdy.com/2024/02/11/web-texture-formats/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Guide</div>
+              <div class="link-title">Choosing Web Texture Formats (Don McCurdy)</div>
+              <div class="link-desc">השוואה מעמיקה: KTX2, Basis, ASTC, BC7, ETC2</div>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

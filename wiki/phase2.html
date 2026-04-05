@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 2: תאורה - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 2: תאורה</h1>
+      <p class="subtitle">
+        תאורה מבוססת סביבה (<span class="ltr">IBL</span>), מפות <span class="ltr">HDR</span>, סטי תאורת סטודיו
+      </p>
+      <span class="version-badge completed" dir="ltr">v0.2.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1: Simple ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          תאורה היא מה שעושה את ההבדל בין "מודל תלת-ממדי שנראה כמו משחק ישן" לבין "תמונה שנראית כמו צילום".
+          בדיוק כמו בצילום אמיתי &mdash; התאורה היא הכל.
+        </p>
+
+        <h3>שני סוגי תאורה:</h3>
+
+        <div class="card">
+          <div class="card-title">&#127758; תאורת סביבה (<span class="ltr">IBL - Image Based Lighting</span>)</div>
+          <p>
+            דמיינו שאתם עוטפים את המודל בתמונה ענקית של סביבה &mdash; שמים, עצים, קירות.
+            האור מהתמונה הזו "נופל" על המודל מכל כיוון, בדיוק כמו במציאות.
+          </p>
+          <p>
+            זו השיטה שגורמת לכדור מתכת לשקף את הסביבה, ולעור מט להיראות רך ומואר באופן טבעי.
+            זה נקרא <span class="ltr">IBL</span> כי התאורה באה מתמונה (<span class="ltr">Image</span>).
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#9728; תאורה ישירה (<span class="ltr">Direct Lights</span>)</div>
+          <p>
+            כמו פנסים בסטודיו צילום. מוסיפים הדגשות, צללים, ומבנה:
+          </p>
+          <ul>
+            <li><strong>אור מפתח (<span class="ltr">Key Light</span>)</strong> &mdash; האור הראשי, חזק, יוצר צללים</li>
+            <li><strong>אור מילוי (<span class="ltr">Fill Light</span>)</strong> &mdash; רך, ממתן צללים חזקים מדי</li>
+            <li><strong>אור שפה (<span class="ltr">Rim Light</span>)</strong> &mdash; מאחור, יוצר קו אור מסביב לאובייקט שמפריד אותו מהרקע</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#127749; מפת HDR</div>
+          <p>
+            תמונת <span class="ltr">HDR</span> (<span class="ltr">High Dynamic Range</span>) היא תמונה שמכילה יותר מידע על בהירות
+            מאשר תמונה רגילה. היא יכולה לייצג גם את השמש הבוהקת וגם את הצל העמוק &mdash;
+            בדיוק כמו העין האנושית. בלי <span class="ltr">HDR</span>, ההשתקפויות נראות שטוחות ומזויפות.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2: Technical ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">איך זה עובד, אילו <span class="ltr">APIs</span>, קוד דוגמה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>קבצים מרכזיים</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>File</th><th>Purpose</th><th>Key APIs</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>src/lighting/environment.ts</code></td>
+                <td>HDR loading + PMREM generation</td>
+                <td><code>RGBELoader</code>, <code>PMREMGenerator</code></td>
+              </tr>
+              <tr>
+                <td><code>src/lighting/light-rig.ts</code></td>
+                <td>3-point studio lighting presets</td>
+                <td><code>DirectionalLight</code>, <code>HemisphereLight</code></td>
+              </tr>
+              <tr>
+                <td><code>src/lighting/ground-plane.ts</code></td>
+                <td>Contact shadow + reflection plane</td>
+                <td><code>MeshStandardMaterial</code>, custom shader</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>תהליך <span class="ltr">PMREM</span> &mdash; ממפת <span class="ltr">HDR</span> לתאורת סביבה</h3>
+        <p>
+          <span class="ltr">PMREM</span> (<span class="ltr">Prefiltered Mipmap Radiance Environment Map</span>) הוא תהליך שמכין את מפת הסביבה
+          לשימוש בחומרים. הוא יוצר גרסאות מטושטשות ברמות שונות &mdash; חומר חלק (מבריק) ישתמש בגרסה החדה,
+          חומר מחוספס ישתמש בגרסה המטושטשת.
+        </p>
+
+        <pre><code><span class="cm">// environment.ts - HDR to IBL Pipeline</span>
+<span class="kw">import</span> { RGBELoader } <span class="kw">from</span> <span class="str">'three/addons/loaders/RGBELoader.js'</span>;
+<span class="kw">import</span> { PMREMGenerator } <span class="kw">from</span> <span class="str">'three'</span>;
+
+<span class="kw">export async function</span> <span class="fn">loadEnvironment</span>(renderer, scene, hdrPath) {
+  <span class="kw">const</span> pmremGenerator = <span class="kw">new</span> <span class="tp">PMREMGenerator</span>(renderer);
+  pmremGenerator.<span class="fn">compileEquirectangularShader</span>();
+
+  <span class="kw">const</span> rgbeLoader = <span class="kw">new</span> <span class="tp">RGBELoader</span>();
+  <span class="kw">const</span> hdrTexture = <span class="kw">await</span> rgbeLoader.<span class="fn">loadAsync</span>(hdrPath);
+
+  <span class="cm">// Generate prefiltered cubemap (256x256, GGX importance sampling)</span>
+  <span class="kw">const</span> envMap = pmremGenerator
+    .<span class="fn">fromEquirectangular</span>(hdrTexture)
+    .texture;
+
+  <span class="cm">// Apply to scene</span>
+  scene.environment = envMap;        <span class="cm">// Used by PBR materials</span>
+  scene.background = envMap;         <span class="cm">// Optional: visible background</span>
+  scene.backgroundBlurriness = <span class="num">0.5</span>; <span class="cm">// Blur the background</span>
+
+  <span class="cm">// Cleanup</span>
+  hdrTexture.<span class="fn">dispose</span>();
+  pmremGenerator.<span class="fn">dispose</span>();
+
+  <span class="kw">return</span> envMap;
+}</code></pre>
+
+        <h3>סט תאורת סטודיו</h3>
+        <pre><code><span class="cm">// light-rig.ts - Studio Lighting Presets</span>
+<span class="kw">export function</span> <span class="fn">createStudioLighting</span>(scene) {
+  <span class="cm">// Key light - main directional, casts shadows</span>
+  <span class="kw">const</span> keyLight = <span class="kw">new</span> <span class="tp">DirectionalLight</span>(<span class="num">0xffffff</span>, <span class="num">1.5</span>);
+  keyLight.position.<span class="fn">set</span>(<span class="num">5</span>, <span class="num">8</span>, <span class="num">5</span>);
+  keyLight.castShadow = <span class="kw">true</span>;
+
+  <span class="cm">// Fill light - softer, opposite side</span>
+  <span class="kw">const</span> fillLight = <span class="kw">new</span> <span class="tp">DirectionalLight</span>(<span class="num">0xb4c6e0</span>, <span class="num">0.6</span>);
+  fillLight.position.<span class="fn">set</span>(<span class="num">-4</span>, <span class="num">3</span>, <span class="num">2</span>);
+
+  <span class="cm">// Rim light - backlight for edge definition</span>
+  <span class="kw">const</span> rimLight = <span class="kw">new</span> <span class="tp">DirectionalLight</span>(<span class="num">0xffeedd</span>, <span class="num">0.8</span>);
+  rimLight.position.<span class="fn">set</span>(<span class="num">-2</span>, <span class="num">6</span>, <span class="num">-6</span>);
+
+  scene.<span class="fn">add</span>(keyLight, fillLight, rimLight);
+  <span class="kw">return</span> { keyLight, fillLight, rimLight };
+}</code></pre>
+
+        <h3>מישור רצפה עם צל מגע</h3>
+        <pre><code><span class="cm">// ground-plane.ts - Shadow-catching ground</span>
+<span class="kw">export function</span> <span class="fn">createGroundPlane</span>(scene) {
+  <span class="kw">const</span> geometry = <span class="kw">new</span> <span class="tp">PlaneGeometry</span>(<span class="num">30</span>, <span class="num">30</span>);
+  <span class="kw">const</span> material = <span class="kw">new</span> <span class="tp">ShadowMaterial</span>({
+    opacity: <span class="num">0.3</span>,  <span class="cm">// Semi-transparent shadow</span>
+  });
+
+  <span class="kw">const</span> plane = <span class="kw">new</span> <span class="tp">Mesh</span>(geometry, material);
+  plane.rotation.x = -Math.PI / <span class="num">2</span>;
+  plane.receiveShadow = <span class="kw">true</span>;
+
+  scene.<span class="fn">add</span>(plane);
+  <span class="kw">return</span> plane;
+}</code></pre>
+
+        <div class="info-box tip">
+          <div class="info-box-title">&#128161; טיפ: חשיפה (Exposure)</div>
+          <p>
+            <code>renderer.toneMappingExposure</code> שולט בכמות האור הכוללת.
+            ערך של <span class="ltr">1.0</span> הוא ברירת מחדל, <span class="ltr">0.5</span> חשוך יותר, <span class="ltr">2.0</span> בהיר יותר.
+            זה שקול ל-<span class="ltr">EV</span> (Exposure Value) בצילום.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3: Research ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">טכנולוגיות אופציונאליות ומאמרים שווים</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127752; Radiance Cascades &mdash; תאורה גלובלית בזמן-אמת</div>
+          <p>
+            טכניקה חדשנית שפותחה על ידי <span class="ltr">Alexander Sannikov</span> (מפתח בכיר ב-<span class="ltr">Grinding Gear Games</span>,
+            יוצרי <span class="ltr">Path of Exile</span>). שיטה זו מאפשרת חישוב <span class="ltr">Global Illumination</span>
+            (<span class="ltr">GI</span>) &mdash; כלומר, אור שמנתר ממשטחים אחרים &mdash; <strong>ללא רעש</strong> ובזמן אמת.
+          </p>
+          <p>
+            הרעיון: חלוקת חישוב התאורה לכמה "קסקדות" ברזולוציות שונות. קסקדה גבוהה מטפלת בקרניים קצרות
+            (פרטים עדינים), קסקדה נמוכה בקרניים ארוכות (תאורה כללית).
+          </p>
+          <p>
+            <strong>יתרונות:</strong> נטול רעש (בניגוד ל-<span class="ltr">Path Tracing</span>), מהיר, עובד גם על חומרה חלשה.
+          </p>
+          <p>
+            <strong>חסרונות:</strong> כרגע רוב המימושים הם <span class="ltr">2D</span>. מימוש <span class="ltr">3D</span> קיים אך ניסיוני.
+          </p>
+          <p>
+            <a href="https://jason.today/rc" target="_blank">Radiance Cascades Interactive Demo (WebGPU)</a>
+            &nbsp;|&nbsp;
+            <a href="https://80.lv/articles/radiance-cascades-new-approach-to-calculating-global-illumination" target="_blank">80 Level: Radiance Cascades Explained</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#129504; Neural Radiance Caching</div>
+          <p>
+            טכניקה שפותחה על ידי <span class="ltr">NVIDIA</span> שמשתמשת ברשת נוירונית קטנה
+            כדי "לזכור" תוצאות חישוב תאורה ולמנוע חישובים כבדים חוזרים.
+            במקום לזרוק קרניים לכל פיקסל מחדש &mdash; הרשת חוזה את התאורה על סמך מיקום ונורמל.
+          </p>
+          <p>
+            <span class="ltr">AMD</span> פיתחה גרסה מסחרית בשם <span class="ltr">FSR Radiance Caching</span>
+            שמנבאת התפשטות אור בסצנה מדגימות <span class="ltr">Path Tracing</span> דלילות,
+            ומחליפה הרבה קרניים משניות בחיזויים נלמדים.
+          </p>
+          <p>
+            <strong>רלוונטיות לנו:</strong> ב-<span class="ltr">Phase 8</span> (<span class="ltr">Path Tracing</span>),
+            שימוש ב-<span class="ltr">Radiance Cache</span> יכול להאיץ את ההתכנסות משמעותית.
+          </p>
+          <p>
+            <a href="https://research.nvidia.com/publication/2021-06_real-time-neural-radiance-caching-path-tracing" target="_blank">NVIDIA: Real-time Neural Radiance Caching (2021)</a>
+            &nbsp;|&nbsp;
+            <a href="https://gpuopen.com/amd-fsr-radiancecaching/" target="_blank">AMD FSR Radiance Caching</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127774; Area Lights ב-Three.js</div>
+          <p>
+            <span class="ltr">Three.js</span> תומך ב-<span class="ltr">RectAreaLight</span> &mdash; אורות שטח מלבניים
+            שמדמים חלונות, מסכי טלוויזיה, או לוחות תאורה. הם יוצרים השתקפויות רכות ותאורה יותר ריאליסטית
+            מאורות נקודתיים. דורשים <span class="ltr">RectAreaLightUniformsLib</span>.
+          </p>
+          <p>שימושי במיוחד להצגת מוצרים ב"חלל סטודיו" &mdash; ניתן להוסיף כאפשרות לסטי התאורה.</p>
+        </div>
+
+        <h3>מקורות נוספים</h3>
+        <div class="research-links">
+          <a href="https://discoverthreejs.com/book/first-steps/physically-based-rendering/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Tutorial</div>
+              <div class="link-title">Discover Three.js: PBR and Lighting</div>
+              <div class="link-desc">מדריך מקיף ל-PBR ותאורה ב-Three.js</div>
+            </div>
+          </a>
+          <a href="https://medium.com/@althafkhanbecse/elevating-realism-mastering-physically-based-rendering-pbr-and-image-based-lighting-ibl-in-e17c287aa9e1" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Article</div>
+              <div class="link-title">Mastering PBR and IBL in Three.js</div>
+              <div class="link-desc">הסבר מעמיק על IBL וחישוב BRDF</div>
+            </div>
+          </a>
+          <a href="https://dl.acm.org/doi/10.1145/3675382" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Paper</div>
+              <div class="link-title">Radiance Caching with On-Surface Caches (ACM 2024)</div>
+              <div class="link-desc">מאמר אקדמי על שיטות מטמון תאורה חדשות</div>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

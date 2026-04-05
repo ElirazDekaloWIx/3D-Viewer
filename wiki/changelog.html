@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>לוג שינויים - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>לוג שינויים</h1>
+      <p class="subtitle">היסטוריית גרסאות והתקדמות הפרויקט</p>
+    </div>
+
+    <section>
+      <!-- v1.0.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v1.0.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">All 9 Phases Complete!</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#127752; Phase 8: Path Tracing &mdash; הושלם</h4>
+        <ul>
+          <li><strong><span class="ltr">three-gpu-pathtracer</span></strong> משולב &mdash; <span class="ltr">WebGL2</span> path tracing עם <span class="ltr">BVH</span> acceleration</li>
+          <li>קונטרולרים: <span class="ltr">Enable</span>, <span class="ltr">Bounces</span> (1-10), מונה <span class="ltr">Samples</span> בזמן אמת</li>
+          <li>איפוס אוטומטי בהזזת מצלמה (progressive convergence)</li>
+        </ul>
+
+        <h4>&#129524; Phase 9: אנימציה &mdash; הושלם</h4>
+        <ul>
+          <li><code>AnimationMixer</code> משולב &mdash; תמיכה באנימציות <span class="ltr">skeletal</span> ו-<span class="ltr">morph targets</span></li>
+          <li>קונטרולרים: בחירת <span class="ltr">clip</span> (dropdown), <span class="ltr">Play/Pause/Stop</span>, מהירות, סליידר זמן (scrub)</li>
+          <li><span class="ltr">Auto-play</span> ברירת מחדל כשמודל מכיל אנימציות</li>
+          <li>נבדק עם <span class="ltr">RobotExpressive</span> &mdash; 14 אנימציות (Dance, Running, Wave...)</li>
+          <li>QA: 8/8 בדיקות עוברות</li>
+        </ul>
+
+        <h4>&#127881; סיכום v1.0.0</h4>
+        <ul>
+          <li><strong>9/9 שלבים הושלמו</strong></li>
+          <li><span class="ltr">WebGPU</span> renderer עם <span class="ltr">WebGL2</span> fallback</li>
+          <li>תאורת <span class="ltr">IBL</span> עם 3 סביבות <span class="ltr">HDR</span></li>
+          <li>חומרי <span class="ltr">PBR</span> מתקדמים (10 הרחבות <span class="ltr">KHR</span>)</li>
+          <li>צללים, <span class="ltr">Bloom</span>, 60+ קונטרולרים, <span class="ltr">API Console</span></li>
+          <li><span class="ltr">Auto-smooth</span>, <span class="ltr">Drag &amp; Drop</span>, <span class="ltr">Path Tracing</span>, <span class="ltr">Animations</span></li>
+        </ul>
+      </div>
+
+      <!-- v0.8.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.8.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Phase 7 Complete</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#128203; Phase 7: API &mdash; הושלם</h4>
+        <ul>
+          <li><strong>18 מתודות API</strong> ב-<code>Viewer3D</code>: <span class="ltr">setExposure, setBackground, setBackgroundGradient, setKeyLight, setFillLight, setRimLight, setAmbient, setShadows, setFOV, setAutoRotate, resetCamera, setModelScale, setModelRotationY, setWireframe, setGround, setEnvironmentIntensity, setEnvironmentRotation, getModelInfo</span></li>
+          <li><strong>API Console</strong> בפאנל &mdash; תיבת קוד לבדיקת כל מתודה ישירות + קיצורים מהירים</li>
+          <li><code>window.viewer</code> חשוף לבדיקה מקונסול הדפדפן</li>
+          <li>QA: 18/18 מתודות עוברות בלי שגיאות</li>
+        </ul>
+      </div>
+
+      <!-- v0.7.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.7.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Phase 6 Complete</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#9889; Phase 6: ביצועים &mdash; הושלם</h4>
+        <ul>
+          <li><strong>Debug Panel שודרג</strong>: <span class="ltr">FPS</span> (צבעי לפי ביצועים), <span class="ltr">Draw Calls</span>, <span class="ltr">Textures</span>, <span class="ltr">Geometries</span>, <span class="ltr">Programs</span></li>
+          <li>קונטרולרים: <span class="ltr">Max Pixel Ratio</span>, <span class="ltr">Frustum Culling</span>, <span class="ltr">Sort Objects</span></li>
+          <li>סטטוס <span class="ltr">Shadow</span> ו-<span class="ltr">Bloom</span> מוצגים ב-debug</li>
+          <li>QA: 14/14 בדיקות עוברות</li>
+        </ul>
+      </div>
+
+      <!-- v0.6.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.6.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Phase 5 Complete</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#10024; Phase 5: Post-Processing &mdash; הושלם</h4>
+        <ul>
+          <li><strong><span class="ltr">Bloom</span></strong> עובד ב-<span class="ltr">WebGPU</span> דרך <code>THREE.PostProcessing</code> + <code>bloom()</code> מ-<span class="ltr">TSL</span></li>
+          <li>קונטרולרים: <span class="ltr">Intensity</span>, <span class="ltr">Threshold</span>, <span class="ltr">Radius</span></li>
+          <li>תמיכה ב-<span class="ltr">WebGL2</span> דרך <code>EffectComposer</code> + <code>UnrealBloomPass</code></li>
+          <li>נבדק ויזואלית &mdash; זוהר ברור על אזורים בהירים</li>
+        </ul>
+
+        <h4>&#128295; שדרוג פאנל בקרה</h4>
+        <ul>
+          <li><strong>60+ קונטרולרים</strong> חשופים ב-12 סקציות</li>
+          <li>כל סליידר מציג ערך בזמן אמת</li>
+          <li>נוספו: מיקום אורות (X/Y/Z), צבעי אורות, <span class="ltr">Display Mode</span> (Normal/Wire/Normals/UV/Depth), <span class="ltr">Bounding Box</span>, <span class="ltr">Axes</span>, <span class="ltr">Grid</span>, <span class="ltr">Fog</span></li>
+          <li>QA אוטומטי: 49/49 בדיקות עוברות</li>
+        </ul>
+
+        <h4>&#128027; תיקונים</h4>
+        <ul>
+          <li><span class="ltr">Env Rotation</span> תוקן &mdash; <code>.set()</code> במקום <code>new Euler</code></li>
+          <li><span class="ltr">Ambient</span> שודרג ל-<code>HemisphereLight</code></li>
+          <li><span class="ltr">PostProcessing</span> &mdash; תוקן מ-<code>RenderPipeline</code> ל-<code>PostProcessing</code> (שם נכון ב-r171)</li>
+        </ul>
+      </div>
+
+      <!-- v0.5.1 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.5.1</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Shadow Upgrade</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#127753; שדרוג צללים</h4>
+        <ul>
+          <li><strong><span class="ltr">Contact Shadow</span></strong> עבור <span class="ltr">WebGL2</span>: רנדור עומק ממצלמה עילית + <span class="ltr">2-pass Gaussian blur</span> &mdash; צל רך ואיכותי</li>
+          <li><strong><span class="ltr">Shadow Map</span></strong> עבור <span class="ltr">WebGPU</span>: <span class="ltr">PCFSoftShadowMap</span> עם <span class="ltr">radius: 8</span></li>
+          <li>קונטרולרים חדשים: <span class="ltr">Opacity</span>, <span class="ltr">Blur</span>, <span class="ltr">Darkness</span></li>
+          <li>פאנל בקרה מלא: <span class="ltr">Environment</span>, <span class="ltr">Lighting</span> (3 סליידרים), <span class="ltr">Shadows</span> (3 סליידרים), <span class="ltr">Ground</span>, <span class="ltr">Auto Smooth</span></li>
+        </ul>
+      </div>
+
+      <!-- v0.5.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.5.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Phase 4 Complete</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#127753; Phase 4: צללים &mdash; הושלם</h4>
+        <ul>
+          <li>צללים רכים (<span class="ltr">PCFSoftShadowMap</span>) עובדים ב-<span class="ltr">WebGPU</span> וב-<span class="ltr">WebGL2</span></li>
+          <li>מפת צל <span class="ltr">2048x2048</span> עם <span class="ltr">radius: 4</span> לקצוות רכים</li>
+          <li>התאמה אוטומטית של <span class="ltr">shadow camera</span> לגודל המודל</li>
+          <li>מעקב אחר מרכז המודל עם <span class="ltr">keyLight.target</span></li>
+          <li>פאנל <span class="ltr">Debug</span> מציג סטטוס צללים: <span class="ltr">ON/OFF</span>, רזולוציה, רדיוס</li>
+        </ul>
+
+        <h4>&#128203; הערות</h4>
+        <ul>
+          <li><span class="ltr">WebGPU</span> דורש <code>renderer.shadowMap.enabled = true</code> <strong>אחרי</strong> <code>init()</code></li>
+          <li><span class="ltr">PCSS</span> (צללים עם פנומברה משתנה) לא נתמך עדיין ב-<span class="ltr">WebGPU</span> &mdash; משתמשים ב-<span class="ltr">PCFSoftShadowMap</span> עם <span class="ltr">radius</span></li>
+          <li><code>keyLight.target</code> חייב להיות מוסף לסצנה כדי שמצלמת הצל תעבוד</li>
+        </ul>
+      </div>
+
+      <!-- v0.4.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.4.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Phase 3 Complete</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#127912; Phase 3: חומרי PBR מתקדמים &mdash; הושלם</h4>
+        <ul>
+          <li>כל הרחבות <span class="ltr">KHR</span> עובדות ב-<span class="ltr">WebGPU</span>: clearcoat, transmission, volume/SSS, sheen, anisotropy, IOR, iridescence</li>
+          <li>נבדק עם מודלי <span class="ltr">Khronos</span> רשמיים: <span class="ltr">ToyCar</span> (clearcoat + sheen), <span class="ltr">DragonAttenuation</span> (transmission + volume)</li>
+          <li><span class="ltr">Three.js GLTFLoader</span> מטפל בכל ההרחבות אוטומטית &mdash; לא נדרש קוד נוסף</li>
+        </ul>
+
+        <h4>&#128027; באגים ידועים</h4>
+        <ul>
+          <li><span class="ltr">WebGPU + transmission</span>: שגיאת <code>copyFramebufferToTexture format mismatch</code> (<span class="ltr">rgba16float</span> vs <span class="ltr">bgra8unorm</span>). באג ב-<span class="ltr">Three.js</span> &mdash; לא משפיע ויזואלית, המודל מוצג נכון</li>
+          <li><code>ShadowMaterial</code> לא נתמך ב-<span class="ltr">WebGPU</span> &mdash; משתמשים ב-<code>MeshStandardMaterial</code> שקוף למחצה</li>
+        </ul>
+      </div>
+
+      <!-- v0.3.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.3.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Phase 2 Complete</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#127774; Phase 2: תאורה &mdash; הושלם</h4>
+        <ul>
+          <li>תאורת <span class="ltr">IBL</span> עם מפות <span class="ltr">HDR</span> מ-<span class="ltr">Polyhaven</span> (קוד פתוח)</li>
+          <li><span class="ltr">PMREM</span> &mdash; מפות סביבה מסוננות מראש להשתקפויות מבוססות חספוס</li>
+          <li>3 סביבות מובנות: <span class="ltr">Studio</span>, <span class="ltr">Outdoor</span>, <span class="ltr">Sunset</span></li>
+          <li>סליידר <span class="ltr">Exposure</span> לשליטה בבהירות</li>
+          <li>רקע גרדיאנט כהה (<span class="ltr">CSS radial gradient</span> דרך canvas שקוף)</li>
+          <li>אור מפתח (<span class="ltr">DirectionalLight</span>) משלים לצללים</li>
+          <li>מישור רצפה שקוף למחצה לקבלת צללים</li>
+        </ul>
+
+        <h4>&#128295; שיפורים נוספים</h4>
+        <ul>
+          <li><span class="ltr">Auto-smooth</span> משופר: <code>mergeVertices()</code> + <code>computeVertexNormals()</code> לכל מודל &lt;50K משולשים</li>
+          <li>תיקון <code>flatShading</code> בחומרים &mdash; כפייה ל-<code>false</code> + <code>needsUpdate</code></li>
+        </ul>
+      </div>
+
+      <!-- v0.2.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.2.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Phase 1 Complete</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#9889; Phase 1: יסודות &mdash; הושלם</h4>
+        <ul>
+          <li><strong><span class="ltr">WebGPU</span> renderer עובד!</strong> עם fallback ל-<span class="ltr">WebGL2</span></li>
+          <li>טעינת מודלי <span class="ltr">glTF/GLB</span> עם <span class="ltr">Draco</span> compression</li>
+          <li><span class="ltr">OrbitControls</span> עם damping והתאמת מצלמה אוטומטית</li>
+          <li>תאורת 3 נקודות (<span class="ltr">Key + Fill + Rim</span>) עם צללים</li>
+          <li>מישור רצפה עם קבלת צללים</li>
+          <li><span class="ltr">Drag &amp; Drop</span> לטעינת קבצים מקומיים</li>
+          <li><span class="ltr">ACES Filmic tone mapping</span></li>
+        </ul>
+
+        <h4>&#128027; באגים שנפתרו</h4>
+        <ul>
+          <li><code>ShadowMaterial</code> לא תואם ל-<span class="ltr">WebGPU</span> &mdash; הוחלף ב-<code>MeshStandardMaterial</code></li>
+          <li><span class="ltr">WebGPU</span> דורש <code>compileAsync()</code> לפני הוספת מודל לסצנה</li>
+          <li><span class="ltr">WebGPU</span> דורש ייבוא כל <span class="ltr">Three.js</span> מ-<code>three/webgpu</code> (לא רק ה-renderer)</li>
+          <li><code>setAnimationLoop()</code> במקום <code>requestAnimationFrame</code></li>
+        </ul>
+
+        <h4>&#128203; לקחים טכניים</h4>
+        <ul>
+          <li>ב-<span class="ltr">WebGPU</span>, כל אובייקטי <span class="ltr">Three.js</span> (Scene, Camera, Lights, Materials) חייבים להגיע מאותו build (<code>three/webgpu</code>)</li>
+          <li>חומרים מסוימים (<code>ShadowMaterial</code>, <code>LineBasicMaterial</code>) לא נתמכים עדיין ב-<span class="ltr">WebGPU</span></li>
+          <li><code>renderer.compileAsync(object, camera, scene)</code> חיוני למניעת שגיאות <span class="ltr">pipeline</span></li>
+        </ul>
+      </div>
+
+      <!-- v0.1.0 -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+          <div>
+            <div class="card-title" style="direction: ltr; display: inline-block;">v0.1.0</div>
+            <span class="version-badge completed" dir="ltr" style="margin-right: var(--spacing-sm);">Documentation</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); direction: ltr;">2026-04-05</div>
+        </div>
+
+        <h4>&#128218; אתר תיעוד</h4>
+        <ul>
+          <li>הקמת אתר דוקומנטציה סטטי עם 13 דפים</li>
+          <li>9 דפי שלב, כל אחד עם 3 רבדים: הסבר פשוט, תיעוד טכני, הרחבות ומחקרים</li>
+          <li>דף ארכיטקטורה עם תרשים <span class="ltr">pipeline</span> ומפת מודולים</li>
+          <li>דף לוג שינויים (אתם כאן)</li>
+          <li>עיצוב בהיר ונקי, <span class="ltr">RTL</span> לעברית עם <span class="ltr">LTR</span> לקוד ומונחים טכניים</li>
+          <li>ניווט צדדי עם סטטוס לכל שלב</li>
+        </ul>
+
+        <h4>&#128300; מחקר</h4>
+        <ul>
+          <li>מחקר מקיף של טכנולוגיות רנדור בזמן-אמת לרשת (2024-2026)</li>
+          <li>השוואת <span class="ltr">Three.js</span> vs <span class="ltr">Babylon.js</span> vs <span class="ltr">PlayCanvas</span></li>
+          <li>מחקר <span class="ltr">Sketchfab</span> (8 מעברי אופטימיזציה, 5 רמות טקסטורה)</li>
+          <li>מחקר <span class="ltr">Substance Stager</span> (<span class="ltr">Mercury Engine</span>, <span class="ltr">Adobe Standard Material</span>)</li>
+          <li>סקירת טכנולוגיות מתקדמות: <span class="ltr">Radiance Cascades</span>, <span class="ltr">Neural Radiance Caching</span>, <span class="ltr">Gaussian Splatting</span>, <span class="ltr">OpenPBR</span></li>
+          <li>מיפוי סטטוס <span class="ltr">WebGPU</span> בדפדפנים (70% כיסוי ב-2026)</li>
+        </ul>
+
+        <h4>&#128203; תכנון</h4>
+        <ul>
+          <li>הגדרת <span class="ltr">Tech Stack</span>: <span class="ltr">Three.js r171+</span>, <span class="ltr">TypeScript</span>, <span class="ltr">Vite</span>, <span class="ltr">WebGPU</span></li>
+          <li>תכנון 9 שלבי פיתוח מסודרים לפי תלויות</li>
+          <li>הגדרת מפת מודולים (~40 קבצי מקור ב-10 מודולים)</li>
+          <li>הגדרת יעדי ביצועים: <span class="ltr">&lt;1s</span> לפיקסל ראשון, <span class="ltr">60fps</span></li>
+          <li>תכנון מערכת <span class="ltr">Path Tracing</span> אופציונלית עם <span class="ltr">OpenPBR</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="color: var(--text-muted); font-size: 1.1rem;">גרסאות קודמות</h2>
+      <p style="color: var(--text-muted); font-style: italic;">אין גרסאות קודמות &mdash; זו ההתחלה!</p>
+    </section>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

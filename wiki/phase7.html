@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 7: API - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 7: API ציבורי</h1>
+      <p class="subtitle">ממשק נקי, 3 שורות להצגת מודל, שליטה מלאה למתקדמים</p>
+      <span class="version-badge completed" dir="ltr">v0.7.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">��סבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          ה-<span class="ltr">API</span> הוא ה"שלט רחוק" של הויואר. מפתח שרוצה להטמיע אותו
+          באתר שלו צריך שהשימוש יהיה <strong>פשוט מספיק</strong> למקרים בסיסיים (3 שורות),
+          אבל <strong>גמיש מספיק</strong> למקרים מתקדמים (שליטה מלאה בכל פרמטר).
+        </p>
+
+        <div class="card">
+          <div class="card-title">&#9889; שימוש בסיסי &mdash; 3 שורות</div>
+          <pre><code><span class="kw">const</span> viewer = <span class="kw">new</span> <span class="tp">Viewer3D</span>(document.<span class="fn">getElementById</span>(<span class="str">'canvas'</span>));
+<span class="kw">await</span> viewer.<span class="fn">loadModel</span>(<span class="str">'model.glb'</span>);
+viewer.<span class="fn">setEnvironment</span>(<span class="str">'studio'</span>);</code></pre>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128295; שימוש מתקדם</div>
+          <pre><code>viewer.<span class="fn">setQuality</span>(<span class="str">'ultra'</span>);
+viewer.<span class="fn">setShadows</span>({ type: <span class="str">'pcss'</span>, softness: <span class="num">0.5</span> });
+viewer.<span class="fn">setPostProcessing</span>({
+  ssao: <span class="kw">true</span>,
+  bloom: { intensity: <span class="num">0.3</span> },
+  ssr: <span class="kw">true</span>,
+  toneMapping: <span class="str">'aces'</span>,
+});
+viewer.<span class="fn">setLighting</span>(<span class="str">'product'</span>);
+viewer.<span class="fn">onProgress</span>((stage, percent) =&gt; <span class="fn">updateUI</span>(stage, percent));</code></pre>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">מפרט ה-<span class="ltr">API</span></div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>מתודות ציבוריות</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Params</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>constructor(canvas)</code></td><td>HTMLCanvasElement</td><td>Viewer3D</td><td>Initialize viewer on canvas</td></tr>
+              <tr><td><code>loadModel(url)</code></td><td>string</td><td>Promise&lt;void&gt;</td><td>Load glTF/glb model</td></tr>
+              <tr><td><code>setEnvironment(name)</code></td><td>'studio' | 'outdoor' | 'product' | URL</td><td>Promise&lt;void&gt;</td><td>Set HDR environment</td></tr>
+              <tr><td><code>setQuality(tier)</code></td><td>'ultra' | 'high' | 'medium' | 'low' | 'auto'</td><td>void</td><td>Set quality tier</td></tr>
+              <tr><td><code>setShadows(opts)</code></td><td>ShadowOptions</td><td>void</td><td>Configure shadow system</td></tr>
+              <tr><td><code>setPostProcessing(opts)</code></td><td>PostProcessingOptions</td><td>void</td><td>Configure effect pipeline</td></tr>
+              <tr><td><code>setLighting(preset)</code></td><td>'studio' | 'outdoor' | 'product'</td><td>void</td><td>Set light rig preset</td></tr>
+              <tr><td><code>setPathTracing(on)</code></td><td>boolean</td><td>void</td><td>Toggle HQ path tracing</td></tr>
+              <tr><td><code>onProgress(cb)</code></td><td>Function</td><td>void</td><td>Loading progress callback</td></tr>
+              <tr><td><code>dispose()</code></td><td>&mdash;</td><td>void</td><td>Cleanup all resources</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>אירועים</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Payload</th><th>When</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>model:loaded</code></td><td>{ scene, animations }</td><td>Model fully loaded</td></tr>
+              <tr><td><code>model:progress</code></td><td>{ stage, percent }</td><td>Each loading stage</td></tr>
+              <tr><td><code>quality:changed</code></td><td>{ tier, reason }</td><td>Auto quality adjustment</td></tr>
+              <tr><td><code>pathtracing:converged</code></td><td>{ samples }</td><td>PT reached target quality</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3 ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">דפוסי עיצוב API וספריות קיימות</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128218; Google &lt;model-viewer&gt; כהשראה</div>
+          <p>
+            <span class="ltr">Google</span> פיתחה <span class="ltr">Web Component</span>
+            בשם <code>&lt;model-viewer&gt;</code> שמציג מודלים עם <span class="ltr">API</span>
+            דקלרטיבי (כמו <span class="ltr">HTML</span>). שווה ללמוד ממנו את דפוסי השימוש
+            הנפוצים ואיזה <span class="ltr">attributes</span> אנשים מצפים לקבל.
+          </p>
+          <p>
+            <a href="https://modelviewer.dev/" target="_blank">model-viewer.dev</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127760; Web Component גרסה</div>
+          <p>
+            אפשרות עתידית: לעטוף את הויואר כ-<span class="ltr">Web Component</span>
+            (<code>&lt;viewer-3d src="model.glb"&gt;</code>) כדי שיהיה אפשר להטמיע
+            בכל פריימוורק (<span class="ltr">React, Vue, Svelte, Vanilla</span>) בלי אינטגרציה.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

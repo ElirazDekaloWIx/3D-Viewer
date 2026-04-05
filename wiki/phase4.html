@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 4: צללים - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 4: צללים</h1>
+      <p class="subtitle">צללים רכים מציאותיים עם <span class="ltr">PCSS</span> &mdash; פנומברה פיזיקלית נכונה</p>
+      <span class="version-badge completed" dir="ltr">v0.4.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1: Simple ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          צללים הם מה שמעגן אובייקט בסצנה. בלי צללים, מודל נראה כאילו הוא "מרחף" באוויר.
+          צל טוב נותן תחושה של משקל, עומק, ומרחב.
+        </p>
+
+        <h3>למה צללים "רגילים" לא מספיקים?</h3>
+        <p>
+          צללים בסיסיים במנועי תלת-ממד הם חדים ושטוחים &mdash; כמו צל בצהריים חמים. אבל במציאות,
+          צללים הם <strong>רכים</strong> &mdash; חדים ליד הבסיס ומטושטשים ככל שמתרחקים:
+        </p>
+
+        <div class="card">
+          <div class="card-title">&#127753; הפנומברה</div>
+          <p>
+            שימו לב לצל של האצבע שלכם על שולחן: ממש ליד האצבע הצל חד, אבל ככל שמרחיקים
+            את היד מהשולחן &mdash; הצל נעשה מטושטש יותר ויותר. האזור המטושטש נקרא
+            <strong>פנומברה</strong> (<span class="ltr">Penumbra</span>).
+          </p>
+          <p>
+            <span class="ltr">PCSS</span> (<span class="ltr">Percentage-Closer Soft Shadows</span>)
+            מדמה בדיוק את התופעה הזו &mdash; צל שמשתנה ברוחבו בהתאם למרחק מהאובייקט שמטיל אותו.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#127759; צל מגע (<span class="ltr">Contact Shadow</span>)</div>
+          <p>
+            צל עדין מאוד שנוצר בדיוק במקום שבו האובייקט נוגע ברצפה.
+            גם אם כל הצללים האחרים כבויים &mdash; צל מגע לבדו יכול לעגן את האובייקט בצורה משכנעת.
+            זה מה ש-<span class="ltr">Sketchfab</span> ו-<span class="ltr">Stager</span> משתמשים.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2: Technical ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">אלגוריתם <span class="ltr">PCSS</span>, מיפוי צללים, ביצועים</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>אלגוריתם <span class="ltr">PCSS</span> &mdash; שלושה שלבים</h3>
+        <div class="info-box note">
+          <div class="info-box-title">שלב 1: חיפוש חוסמים (<span class="ltr">Blocker Search</span>)</div>
+          <p>
+            דגימת מפת הצל (<span class="ltr">shadow map</span>) באזור רחב סביב הפיקסל הנוכחי.
+            המטרה: למצוא מהו העומק הממוצע של האובייקטים שחוסמים אור.
+            משתמש ב-<span class="ltr">Poisson Disk</span> לדגימה אחידה.
+          </p>
+        </div>
+        <div class="info-box note">
+          <div class="info-box-title">שלב 2: חישוב רוחב הפנומברה</div>
+          <p dir="ltr" style="font-family: var(--font-mono); font-size: 0.9rem;">
+            penumbraWidth = (receiverDepth - blockerDepth) * lightSize / blockerDepth
+          </p>
+          <p>
+            ככל שהמרחק בין האובייקט החוסם למשטח המקבל גדול יותר &mdash; הפנומברה רחבה יותר (צל מטושטש יותר).
+          </p>
+        </div>
+        <div class="info-box note">
+          <div class="info-box-title">שלב 3: סינון <span class="ltr">PCF</span> משתנה</div>
+          <p>
+            דגימת מפת הצל שוב, הפעם עם רדיוס <span class="ltr">Poisson Disk</span> שמותאם
+            לרוחב הפנומברה שחושב. קרוב לאובייקט = דגימה צפופה (חד), רחוק = דגימה רחבה (מטושטש).
+          </p>
+        </div>
+
+        <h3>הגדרות מפת צל</h3>
+        <pre><code><span class="cm">// shadow-system.ts</span>
+<span class="kw">function</span> <span class="fn">configureShadows</span>(light, sceneBounds) {
+  light.castShadow = <span class="kw">true</span>;
+  light.shadow.mapSize.<span class="fn">set</span>(<span class="num">2048</span>, <span class="num">2048</span>);
+  light.shadow.type = VSMShadowMap; <span class="cm">// or PCFSoftShadowMap</span>
+
+  <span class="cm">// Auto-fit shadow camera to scene</span>
+  <span class="kw">const</span> d = sceneBounds.max.<span class="fn">distanceTo</span>(sceneBounds.min) * <span class="num">0.6</span>;
+  light.shadow.camera.left = -d;
+  light.shadow.camera.right = d;
+  light.shadow.camera.top = d;
+  light.shadow.camera.bottom = -d;
+  light.shadow.camera.near = <span class="num">0.1</span>;
+  light.shadow.camera.far = d * <span class="num">4</span>;
+
+  <span class="cm">// Bias to prevent shadow acne</span>
+  light.shadow.bias = <span class="num">-0.0005</span>;
+  light.shadow.normalBias = <span class="num">0.02</span>;
+}</code></pre>
+
+        <h3>השוואת שיטות צל</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Quality</th><th>Performance</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Basic Shadow Map</td>
+                <td>Low - hard edges</td>
+                <td>Fast</td>
+                <td>Default in Three.js</td>
+              </tr>
+              <tr>
+                <td>PCF Soft</td>
+                <td>Medium - uniform blur</td>
+                <td>Good</td>
+                <td>Built-in Three.js option</td>
+              </tr>
+              <tr>
+                <td>VSM</td>
+                <td>Medium - can blur well</td>
+                <td>Good</td>
+                <td>Light bleeding artifacts</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600; color: var(--accent-teal);">PCSS</td>
+                <td style="color: var(--accent-green);">High - variable penumbra</td>
+                <td>Moderate</td>
+                <td>Our target - physically correct</td>
+              </tr>
+              <tr>
+                <td>CSM (Cascaded)</td>
+                <td>High for large scenes</td>
+                <td>Moderate</td>
+                <td>Multiple maps for distance tiers</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3: Research ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">טכנולוגיות אופציונאליות ומאמרים שווים</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127774; Ray-Traced Shadows ב-WebGPU</div>
+          <p>
+            עם <span class="ltr">WebGPU Compute Shaders</span> אפשר לממש צללים מבוססי מעקב קרניים
+            במקום מפות צל. היתרון: אין <span class="ltr">shadow acne</span>, אין <span class="ltr">peter panning</span>,
+            ואין מגבלת רזולוציה. החיסרון: דורש <span class="ltr">BVH</span> (מבנה האצה) ויותר חישוב.
+          </p>
+          <p>אפשרי כשדרה לפרויקט ב-<span class="ltr">Phase 8</span> (<span class="ltr">Path Tracing</span>).</p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128065; Moment Shadow Maps (MSM)</div>
+          <p>
+            שיטה מתקדמת שמאחסנת את "המומנטים" של התפלגות העומק במפת הצל.
+            פותרת את בעיית <span class="ltr">light bleeding</span> של <span class="ltr">VSM</span>
+            ונותנת צללים חלקים יותר. דורשת 4 ערכים לכל פיקסל (במקום 1), אבל התוצאות מצוינות.
+          </p>
+        </div>
+
+        <h3>מקורות נוספים</h3>
+        <div class="research-links">
+          <a href="https://discourse.threejs.org/t/new-realistic-pcss-soft-shadow-implementation-react-vanilla/48579" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Implementation</div>
+              <div class="link-title">PCSS for Three.js (React + Vanilla)</div>
+              <div class="link-desc">מימוש PCSS עובד שאפשר לבסס עליו</div>
+            </div>
+          </a>
+          <a href="https://therealmjp.github.io/posts/shadow-maps/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Article</div>
+              <div class="link-title">A Sampling of Shadow Techniques</div>
+              <div class="link-desc">סקירה מקיפה של כל שיטות הצללים בגרפיקה</div>
+            </div>
+          </a>
+          <a href="https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Tutorial</div>
+              <div class="link-title">LearnOpenGL: Shadow Mapping</div>
+              <div class="link-desc">מדריך מפורט עם קוד לכל שלב</div>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

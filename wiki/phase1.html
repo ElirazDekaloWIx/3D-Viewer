@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 1: יסודות - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 1: יסודות</h1>
+      <p class="subtitle">רנדרר, טעינת מודלים, בקרת מצלמה &mdash; הבסיס שעליו הכל נבנה</p>
+      <span class="version-badge completed" dir="ltr">v0.1.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1: Simple ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          דמיינו שאתם בונים מסגרת של תמונה. לפני שתוכלו לצייר משהו &mdash; אתם צריכים את הקנבס,
+          את המעמד, ואת הצבעים. ה"יסודות" הם בדיוק זה: המסגרת הבסיסית שמאפשרת להציג דברים על המסך.
+        </p>
+
+        <h3>שלושת הרכיבים:</h3>
+
+        <div class="card">
+          <div class="card-title">&#127912; הרנדרר (Renderer)</div>
+          <p>
+            המנוע שמצייר פיקסלים על המסך. כמו מדפסת &mdash; הוא מקבל נתונים תלת-ממדיים
+            ו"מדפיס" אותם כתמונה דו-ממדית. יש לנו שני סוגי "מדפסות":
+          </p>
+          <ul>
+            <li><strong><span class="ltr">WebGPU</span></strong> &mdash; הדור החדש, מהיר פי 2-10, תומך בחישובים מתקדמים. כמו מדפסת לייזר.</li>
+            <li><strong><span class="ltr">WebGL2</span></strong> &mdash; הוותיק והמוכר, עובד בכל דפדפן. כמו מדפסת הזרקת דיו &mdash; אמינה ונגישה.</li>
+          </ul>
+          <p>הויואר שלנו ינסה קודם את <span class="ltr">WebGPU</span>, ואם הדפדפן לא תומך &mdash; ייפול בחן ל-<span class="ltr">WebGL2</span>.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128230; טוען המודלים (Asset Loader)</div>
+          <p>
+            מודל תלת-ממדי הוא קובץ שמכיל גיאומטריה (צורות), טקסטורות (תמונות שמודבקות על הצורות),
+            וחומרים (איך הדבר נראה &mdash; מבריק? מט? שקוף?).
+          </p>
+          <p>
+            הקובץ הגיע דחוס כדי שייטען מהר. הטוען שלנו יודע לפרק את הדחיסה ברקע
+            (ב-<span class="ltr">WebWorker</span> &mdash; חוט עבודה נפרד שלא מאט את הממשק),
+            כך שהמשתמש לא מרגיש שהדפדפן "נתקע".
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#127909; בקרת מצלמה (Camera Controls)</div>
+          <p>
+            כמו מצלמה אמיתית שמסתובבת סביב האובייקט. המשתמש יכול:
+          </p>
+          <ul>
+            <li><strong>לסובב</strong> (גרירה עם העכבר) &mdash; ראה את המודל מכל זווית</li>
+            <li><strong>לזום</strong> (גלגלת העכבר) &mdash; התקרב/התרחק</li>
+            <li><strong>להזיז</strong> (<span class="ltr">Pan</span>) &mdash; הזז את המרכז</li>
+          </ul>
+          <p>המצלמה גם יודעת להתאים את עצמה אוטומטית לגודל המודל &mdash; מודל קטן? זום פנימה. מודל ענק? זום החוצה.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2: Technical ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">איך זה עובד, אילו <span class="ltr">APIs</span>, קוד דוגמה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>קבצים מרכזיים</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Purpose</th>
+                <th>Key APIs</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>src/core/renderer.ts</code></td>
+                <td>Renderer factory - WebGPU with WebGL2 fallback</td>
+                <td><code>WebGPURenderer</code>, <code>WebGLRenderer</code></td>
+              </tr>
+              <tr>
+                <td><code>src/core/scene-manager.ts</code></td>
+                <td>Scene, Camera, OrbitControls</td>
+                <td><code>PerspectiveCamera</code>, <code>OrbitControls</code></td>
+              </tr>
+              <tr>
+                <td><code>src/loading/asset-loader.ts</code></td>
+                <td>GLTF + compression decoders</td>
+                <td><code>GLTFLoader</code>, <code>DRACOLoader</code>, <code>KTX2Loader</code></td>
+              </tr>
+              <tr>
+                <td><code>src/core/event-bus.ts</code></td>
+                <td>Typed inter-module messaging</td>
+                <td>Custom EventEmitter</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>אסטרטגיית <span class="ltr">Fallback</span> של הרנדרר</h3>
+        <p>הגישה מבוססת על <span class="ltr">dynamic import</span> &mdash; ניסיון ייבוא של <span class="ltr">WebGPU</span> ונפילה חיננית:</p>
+
+        <pre><code><span class="cm">// renderer.ts - Renderer Factory</span>
+<span class="kw">export async function</span> <span class="fn">createRenderer</span>(canvas: HTMLCanvasElement) {
+  <span class="kw">try</span> {
+    <span class="cm">// Try WebGPU first</span>
+    <span class="kw">const</span> { WebGPURenderer } = <span class="kw">await import</span>(<span class="str">'three/webgpu'</span>);
+    <span class="kw">const</span> renderer = <span class="kw">new</span> <span class="tp">WebGPURenderer</span>({ canvas, antialias: <span class="kw">true</span> });
+    <span class="kw">await</span> renderer.<span class="fn">init</span>();  <span class="cm">// WebGPU requires async init!</span>
+
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.outputColorSpace = SRGBColorSpace;
+    renderer.setPixelRatio(Math.<span class="fn">min</span>(devicePixelRatio, <span class="num">2.0</span>));
+
+    <span class="kw">return</span> { renderer, isWebGPU: <span class="kw">true</span> };
+  } <span class="kw">catch</span> {
+    <span class="cm">// Fallback to WebGL2</span>
+    <span class="kw">const</span> { WebGLRenderer } = <span class="kw">await import</span>(<span class="str">'three'</span>);
+    <span class="kw">const</span> renderer = <span class="kw">new</span> <span class="tp">WebGLRenderer</span>({ canvas, antialias: <span class="kw">true</span> });
+
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.outputColorSpace = SRGBColorSpace;
+    renderer.setPixelRatio(Math.<span class="fn">min</span>(devicePixelRatio, <span class="num">2.0</span>));
+
+    <span class="kw">return</span> { renderer, isWebGPU: <span class="kw">false</span> };
+  }
+}</code></pre>
+
+        <div class="info-box note">
+          <div class="info-box-title">&#128161; הערה חשובה</div>
+          <p>
+            <span class="ltr">WebGPURenderer</span> דורש <code>await renderer.init()</code> לפני כל פעולת רנדור.
+            זו קריאה אסינכרונית &mdash; בניגוד ל-<span class="ltr">WebGLRenderer</span> שעובד מיידית.
+          </p>
+        </div>
+
+        <h3>הרכבת מערך הטעינה</h3>
+        <pre><code><span class="cm">// asset-loader.ts - Loader Composition</span>
+<span class="kw">import</span> { GLTFLoader } <span class="kw">from</span> <span class="str">'three/addons/loaders/GLTFLoader.js'</span>;
+<span class="kw">import</span> { DRACOLoader } <span class="kw">from</span> <span class="str">'three/addons/loaders/DRACOLoader.js'</span>;
+<span class="kw">import</span> { KTX2Loader } <span class="kw">from</span> <span class="str">'three/addons/loaders/KTX2Loader.js'</span>;
+<span class="kw">import</span> { MeshoptDecoder } <span class="kw">from</span> <span class="str">'three/addons/libs/meshopt_decoder.module.js'</span>;
+
+<span class="kw">export function</span> <span class="fn">createAssetLoader</span>(renderer: WebGPURenderer | WebGLRenderer) {
+  <span class="cm">// Draco - geometry compression (90-95% size reduction)</span>
+  <span class="kw">const</span> dracoLoader = <span class="kw">new</span> <span class="tp">DRACOLoader</span>();
+  dracoLoader.<span class="fn">setDecoderPath</span>(<span class="str">'/draco/'</span>);  <span class="cm">// WASM decoders</span>
+
+  <span class="cm">// KTX2 - texture compression (82% size reduction)</span>
+  <span class="kw">const</span> ktx2Loader = <span class="kw">new</span> <span class="tp">KTX2Loader</span>();
+  ktx2Loader.<span class="fn">setTranscoderPath</span>(<span class="str">'/basis/'</span>);
+  ktx2Loader.<span class="fn">detectSupport</span>(renderer);
+
+  <span class="cm">// GLTF - the main loader</span>
+  <span class="kw">const</span> gltfLoader = <span class="kw">new</span> <span class="tp">GLTFLoader</span>();
+  gltfLoader.<span class="fn">setDRACOLoader</span>(dracoLoader);
+  gltfLoader.<span class="fn">setKTX2Loader</span>(ktx2Loader);
+  gltfLoader.<span class="fn">setMeshoptDecoder</span>(MeshoptDecoder);
+
+  <span class="kw">return</span> gltfLoader;
+}</code></pre>
+
+        <h3>התאמת מצלמה אוטומטית</h3>
+        <pre><code><span class="cm">// Auto-fit camera to model bounding box</span>
+<span class="kw">function</span> <span class="fn">fitCameraToModel</span>(camera, controls, model) {
+  <span class="kw">const</span> box = <span class="kw">new</span> <span class="tp">Box3</span>().<span class="fn">setFromObject</span>(model);
+  <span class="kw">const</span> center = box.<span class="fn">getCenter</span>(<span class="kw">new</span> <span class="tp">Vector3</span>());
+  <span class="kw">const</span> size = box.<span class="fn">getSize</span>(<span class="kw">new</span> <span class="tp">Vector3</span>());
+
+  <span class="kw">const</span> maxDim = Math.<span class="fn">max</span>(size.x, size.y, size.z);
+  <span class="kw">const</span> fov = camera.fov * (Math.PI / <span class="num">180</span>);
+  <span class="kw">const</span> distance = maxDim / (<span class="num">2</span> * Math.<span class="fn">tan</span>(fov / <span class="num">2</span>));
+
+  camera.position.<span class="fn">set</span>(
+    center.x + distance * <span class="num">0.5</span>,
+    center.y + distance * <span class="num">0.3</span>,
+    center.z + distance
+  );
+  controls.target.<span class="fn">copy</span>(center);
+  controls.<span class="fn">update</span>();
+}</code></pre>
+
+        <h3>הגדרות <span class="ltr">Vite</span> חשובות</h3>
+        <pre><code><span class="cm">// vite.config.ts</span>
+<span class="kw">export default</span> <span class="fn">defineConfig</span>({
+  build: {
+    target: <span class="str">'esnext'</span>,  <span class="cm">// Required for WebGPU top-level await</span>
+  },
+  worker: {
+    format: <span class="str">'es'</span>,  <span class="cm">// ES modules in WebWorkers</span>
+  },
+  optimizeDeps: {
+    exclude: [<span class="str">'three'</span>],  <span class="cm">// Prevent Vite pre-bundling Three.js</span>
+  },
+  assetsInclude: [<span class="str">'**/*.hdr'</span>, <span class="str">'**/*.glb'</span>, <span class="str">'**/*.gltf'</span>, <span class="str">'**/*.ktx2'</span>],
+});</code></pre>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3: Research ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">טכנולוגיות אופציונאליות ומאמרים שווים</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128218; TSL &mdash; Three Shader Language</div>
+          <p>
+            החל מגרסה <span class="ltr">r171</span>, <span class="ltr">Three.js</span> מציע שפת שיידרים חדשה בשם <span class="ltr">TSL</span> שמאפשרת לכתוב שיידר אחד
+            שמתקמפל גם ל-<span class="ltr">GLSL</span> (עבור <span class="ltr">WebGL</span>) וגם ל-<span class="ltr">WGSL</span> (עבור <span class="ltr">WebGPU</span>).
+            זה מבטל את הצורך לתחזק שני סטים של שיידרים.
+          </p>
+          <p>
+            <a href="https://blog.maximeheckel.com/posts/field-guide-to-tsl-and-webgpu/" target="_blank">Field Guide to TSL and WebGPU &mdash; Maxime Heckel</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128640; WebGPU Compute Shaders לעיבוד מודלים</div>
+          <p>
+            <span class="ltr">WebGPU</span> מאפשר <span class="ltr">Compute Shaders</span> &mdash; חישובים כלליים על ה-<span class="ltr">GPU</span> שלא קשורים לציור.
+            אפשר להשתמש בהם ל:
+          </p>
+          <ul>
+            <li>פישוט מודלים (<span class="ltr">Mesh Simplification</span>) בזמן אמת על ה-<span class="ltr">GPU</span></li>
+            <li>יצירת <span class="ltr">LOD</span> אוטומטי בצד הלקוח</li>
+            <li><span class="ltr">Frustum Culling</span> על ה-<span class="ltr">GPU</span> (סינון אובייקטים שלא נראים)</li>
+            <li>הנפשת עשרות אלפי אובייקטים במקביל</li>
+          </ul>
+          <p>
+            <a href="https://surma.dev/things/webgpu/" target="_blank">WebGPU &mdash; All of the cores, none of the canvas &mdash; surma.dev</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128202; סטטוס תמיכת WebGPU בדפדפנים (2026)</div>
+          <p>נכון לתחילת 2026, ~70% מהמשתמשים יכולים להריץ <span class="ltr">WebGPU</span>:</p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Browser</th><th>WebGPU Status</th><th>Since</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Chrome / Edge</td><td style="color: var(--accent-green);">Shipped</td><td>v113+ (April 2023)</td></tr>
+                <tr><td>Firefox</td><td style="color: var(--accent-green);">Shipped</td><td>v147 (Jan 2026) - Windows</td></tr>
+                <tr><td>Safari</td><td style="color: var(--accent-green);">Shipped</td><td>iOS 26 / macOS Tahoe</td></tr>
+                <tr><td>Samsung Internet</td><td style="color: var(--accent-orange);">Behind flag</td><td>TBD</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <a href="https://byteiota.com/webgpu-2026-70-percent-browser-support-15x-performance-gains/" target="_blank">WebGPU 2026: 70% Browser Support, 15x Performance Gains</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#9889; Meshopt vs Draco &mdash; השוואת דחיסת גיאומטריה</div>
+          <p>
+            שני הפורמטים דוחסים גיאומטריה, אבל עם גישות שונות:
+          </p>
+          <ul>
+            <li><strong><span class="ltr">Draco</span></strong>: דחיסה אגרסיבית (90-95%), אבל פענוח איטי יותר. מצוין לקבצים גדולים שעוברים ברשת.</li>
+            <li><strong><span class="ltr">Meshopt</span></strong>: דחיסה מתונה יותר (~70%), אבל פענוח מהיר מאוד ומאפשר <span class="ltr">streaming</span> &mdash; הצגת חלקים של המודל לפני שהכל נטען.</li>
+          </ul>
+          <p>אפשר לתמוך בשניהם ולבחור לפי מקרה השימוש.</p>
+        </div>
+
+        <h3>מקורות נוספים</h3>
+        <div class="research-links">
+          <a href="https://threejs.org/docs/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Docs</div>
+              <div class="link-title">Three.js Official Documentation</div>
+              <div class="link-desc">תיעוד רשמי של כל ה-APIs, כולל WebGPURenderer</div>
+            </div>
+          </a>
+          <a href="https://www.utsubo.com/blog/threejs-best-practices-100-tips" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Article</div>
+              <div class="link-title">100 Three.js Tips for 2026</div>
+              <div class="link-desc">טיפים מקיפים לביצועים, ארכיטקטורה ושיטות עבודה</div>
+            </div>
+          </a>
+          <a href="https://www.utsubo.com/blog/threejs-2026-what-changed" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Article</div>
+              <div class="link-title">What's New in Three.js 2026</div>
+              <div class="link-desc">סקירת שינויים מרכזיים: WebGPU, TSL, BatchedMesh</div>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

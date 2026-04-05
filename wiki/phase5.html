@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 5: Post-Processing - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>Phase 5: Post-Processing</h1>
+      <p class="subtitle">האפקטים שהופכים רנדר גולמי לתמונה מקצועית &mdash; <span class="ltr">SSAO</span>, <span class="ltr">Bloom</span>, <span class="ltr">SSR</span>, מיפוי גוונים</p>
+      <span class="version-badge completed" dir="ltr">v0.5.0 &middot; Completed</span>
+    </div>
+
+    <!-- ==================== LAYER 1: Simple ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon simple">&#128161;</div>
+        <div>
+          <div class="layer-title">הסבר פשוט</div>
+          <div class="layer-subtitle">מה זה ולמה צריך את זה</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <p>
+          <span class="ltr">Post-Processing</span> הוא כמו עריכה בפוטושופ &mdash; אחרי שהתמונה "צולמה"
+          (הרנדר), מוסיפים אפקטים שמשפרים את המראה הסופי. זה ההבדל בין תמונה גולמית לתמונה מעובדת.
+        </p>
+        <p>
+          זה בדיוק מה שמפריד בין ויואר שנראה "חובבני" לבין כזה שנראה כמו <span class="ltr">Sketchfab</span> או <span class="ltr">Stager</span>.
+        </p>
+
+        <div class="card">
+          <div class="card-title">&#128065; SSAO &mdash; הצללה סביבתית</div>
+          <p>
+            מוסיף צללים עדינים בפינות, חריצים, ומקומות שבהם משטחים קרובים זה לזה.
+            כמו הצל הקל שנוצר בפינה של חדר &mdash; בלי מקור אור ספציפי, פשוט האור מגיע
+            פחות למקומות "מוסתרים". נותן תחושה של עומק ונפח.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#10024; Bloom &mdash; זוהר</div>
+          <p>
+            כשמסתכלים על משהו בהיר מאוד (כמו שמש דרך חלון), נראה "הילה" של אור סביבו.
+            <span class="ltr">Bloom</span> מדמה את התופעה הזו &mdash; אזורים בהירים "מקרינים" אור לסביבתם.
+            נותן תחושה של <span class="ltr">HDR</span> אמיתי ומראה "קולנועי".
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128170; SSR &mdash; השתקפויות</div>
+          <p>
+            רצפה מבריקה שמשקפת את האובייקט שמעליה. <span class="ltr">SSR</span>
+            (<span class="ltr">Screen Space Reflections</span>) מחשב השתקפויות ממה שכבר נראה
+            על המסך &mdash; זול יחסית אבל מוסיף ריאליזם משמעותי.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#127912; Tone Mapping &mdash; מיפוי גוונים</div>
+          <p>
+            מסכי מחשב מוגבלים בטווח הבהירות שהם יכולים להציג. <span class="ltr">Tone Mapping</span>
+            "דוחס" את כל טווח האור (מצל עמוק לשמש בוהקת) לטווח שהמסך יכול להציג,
+            בלי לאבד פרטים. <span class="ltr">ACES</span> הוא הסטנדרט של תעשיית הקולנוע.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128200; Anti-Aliasing &mdash; החלקת קצוות</div>
+          <p>
+            בלי החלקה, קווים אלכסוניים נראים "משוננים" (מדרגות). <span class="ltr">Anti-Aliasing</span>
+            מרכך את הקצוות. <span class="ltr">FXAA</span> מהיר אבל מטשטש קצת,
+            <span class="ltr">TAA</span> איכותי יותר ומשתמש במידע מפריימים קודמים.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 2: Technical ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon technical">&#9881;</div>
+        <div>
+          <div class="layer-title">תיעוד טכני</div>
+          <div class="layer-subtitle">שרשרת אפקטים, <span class="ltr">API</span>, קוד</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <h3>שרשרת האפקטים (סדר חשוב!)</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Effect</th><th>Purpose</th><th>Performance Cost</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>SSAO</td><td>Ambient shadows in crevices</td><td>Medium</td></tr>
+              <tr><td>2</td><td>SSR</td><td>Screen-space reflections</td><td>High</td></tr>
+              <tr><td>3</td><td>Bloom</td><td>HDR glow on bright areas</td><td>Low-Medium</td></tr>
+              <tr><td>4</td><td>ACES Tone Mapping</td><td>HDR &rarr; SDR color mapping</td><td>Negligible</td></tr>
+              <tr><td>5</td><td>TAA / FXAA</td><td>Anti-aliasing</td><td>Low</td></tr>
+              <tr><td>6</td><td>Vignette</td><td>Edge darkening (optional)</td><td>Negligible</td></tr>
+              <tr><td>7</td><td>Color Grading</td><td>Saturation/contrast</td><td>Negligible</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>מימוש <span class="ltr">WebGPU</span> (שרשרת <span class="ltr">TSL</span>)</h3>
+        <pre><code><span class="cm">// pipeline.ts - WebGPU Post-Processing</span>
+<span class="kw">import</span> { PostProcessing, pass } <span class="kw">from</span> <span class="str">'three/webgpu'</span>;
+<span class="kw">import</span> { bloom, ao, fxaa } <span class="kw">from</span> <span class="str">'three/addons/tsl/display'</span>;
+
+<span class="kw">export function</span> <span class="fn">createPipeline</span>(renderer, scene, camera) {
+  <span class="kw">const</span> postProcessing = <span class="kw">new</span> <span class="tp">PostProcessing</span>(renderer);
+  <span class="kw">const</span> scenePass = <span class="fn">pass</span>(scene, camera);
+
+  <span class="cm">// Get render targets</span>
+  <span class="kw">const</span> output = scenePass.<span class="fn">getTextureNode</span>(<span class="str">'output'</span>);
+  <span class="kw">const</span> depth = scenePass.<span class="fn">getTextureNode</span>(<span class="str">'depth'</span>);
+
+  <span class="cm">// Chain effects via node math</span>
+  <span class="kw">let</span> result = output;
+  result = result.<span class="fn">add</span>(<span class="fn">ao</span>(output, depth).<span class="fn">mul</span>(<span class="num">0.5</span>));      <span class="cm">// SSAO</span>
+  result = result.<span class="fn">add</span>(<span class="fn">bloom</span>(result).<span class="fn">mul</span>(<span class="num">0.3</span>));          <span class="cm">// Bloom</span>
+  result = <span class="fn">fxaa</span>(result);                                 <span class="cm">// Anti-aliasing</span>
+
+  postProcessing.outputNode = result;
+  <span class="kw">return</span> postProcessing;
+}</code></pre>
+
+        <h3>מיפוי גוונים: אפשרויות</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Tone Mapping</th><th>Look</th><th>Best For</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ACES Filmic</td><td>Warm, cinematic, slightly saturated</td><td>Default - matches Stager</td></tr>
+              <tr><td>AgX</td><td>Neutral, accurate, less saturation shift</td><td>Scientific, product vis</td></tr>
+              <tr><td>Neutral (PBR)</td><td>Minimal curve, faithful to HDR values</td><td>E-commerce, accurate color</td></tr>
+              <tr><td>Reinhard</td><td>Simple compression, can look washed out</td><td>Legacy compatibility</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== LAYER 3: Research ==================== -->
+    <div class="layer">
+      <div class="layer-header">
+        <div class="layer-icon research">&#128300;</div>
+        <div>
+          <div class="layer-title">הרחבות ומחקרים</div>
+          <div class="layer-subtitle">טכנולוגיות אופציונאליות ומאמרים שווי��</div>
+        </div>
+      </div>
+      <div class="layer-content">
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128170; Stochastic SSR עם Hi-Z Ray Marching</div>
+          <p>
+            <span class="ltr">SSR</span> סטנדרטי מתקדם פיקסל אחר פיקסל ויכול להיות איטי.
+            <span class="ltr">Hi-Z</span> (<span class="ltr">Hierarchical-Z</span>) מאיץ את התהליך
+            על ידי שימוש ב-<span class="ltr">mip chain</span> של מפת העומק &mdash; קפיצות גדולות
+            כשאין פגיעה, ועידון ברזולוציה גבוהה כשיש.
+          </p>
+          <p>
+            <span class="ltr">Stochastic</span> מוסיף דגימה אקראית מבוססת <span class="ltr">blue noise</span>
+            שמדמה את האופי הלא-מושלם של השתקפויות על חומרים מחוספסים.
+            <span class="ltr">AMD FidelityFX SSSR</span> הוא מימוש מוכן שאפשר ללמוד ממנו.
+          </p>
+          <p>
+            <a href="https://sugulee.wordpress.com/2021/01/19/screen-space-reflections-implementation-and-optimization-part-2-hi-z-tracing-method/" target="_blank">SSR Hi-Z Tracing Implementation</a>
+            &nbsp;|&nbsp;
+            <a href="https://interplayoflight.wordpress.com/2022/09/28/notes-on-screenspace-reflections-with-fidelityfx-sssr/" target="_blank">Notes on FidelityFX SSSR</a>
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127909; GTAO &mdash; Ground Truth Ambient Occlusion</div>
+          <p>
+            גרסה מדויקת יותר של <span class="ltr">SSAO</span> שמחשבת את ה-<span class="ltr">AO</span>
+            בצורה קרובה יותר למציאות. <span class="ltr">Three.js</span> כולל מימוש של
+            <span class="ltr">GTAO</span> (מבוסס על <span class="ltr">Activision</span>).
+            הביצועים דומים ל-<span class="ltr">SSAO</span> אבל התוצאות נקיות ומדויקות יותר.
+          </p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#127760; Depth of Field (DOF) &mdash; עומק שדה</div>
+          <p>
+            מדמה את אפקט ה"טשטוש" של מצלמה אמיתית &mdash; האובייקט בפוקוס חד,
+            הרקע (והקידמה) מטושטשים. שימושי במיוחד להצגת מוצרים.
+            <span class="ltr">Bokeh DOF</span> יוצר עיגולים מטושטשים יפים.
+          </p>
+          <p>אפשרי כאופציה שהמשתמש מפעיל &mdash; לא ברירת מחדל כי מסתיר חלק מהסצנה.</p>
+        </div>
+
+        <div class="info-box research">
+          <div class="info-box-title">&#128248; Chromatic Aberration &mdash; סטיית צבע</div>
+          <p>
+            אפקט עדין שבו הצבעים "נפרדים" קצת בקצוות התמונה &mdash; כמו שקורה בעדשות אמיתיות.
+            ב-<span class="ltr">Three.js TSL</span> קיים כ-<code>chromaticAberration()</code>.
+            מוסיף תחושה "פוטוגרפית". יש להשתמש בעדינות!
+          </p>
+        </div>
+
+        <h3>מקורות נוספים</h3>
+        <div class="research-links">
+          <a href="https://github.com/pmndrs/postprocessing" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Library</div>
+              <div class="link-title">pmndrs/postprocessing</div>
+              <div class="link-desc">ספריית post-processing איכותית ל-Three.js עם אופטימיזציות</div>
+            </div>
+          </a>
+          <a href="https://github.com/0beqz/screen-space-reflections" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Library</div>
+              <div class="link-title">Three.js Screen Space Reflections</div>
+              <div class="link-desc">מימוש SSR קוד-פתוח ל-Three.js</div>
+            </div>
+          </a>
+          <a href="https://sangillee.com/2025-01-15-post-processing/" target="_blank" class="research-link">
+            <div>
+              <div class="link-type">Article</div>
+              <div class="link-title">Post-Processing in Three.js (2025)</div>
+              <div class="link-desc">סקירה מעמיקה של EffectComposer ו-ShaderPass</div>
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

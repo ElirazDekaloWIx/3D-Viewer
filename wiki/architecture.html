@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ארכיטקטורה - 3D Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+
+    <div class="page-header">
+      <h1>ארכיטקטורה</h1>
+      <p class="subtitle">מבנה המערכת, תרשים <span class="ltr">Pipeline</span>, וזרימת נתונים</p>
+    </div>
+
+    <!-- ===== Design Principles ===== -->
+    <section>
+      <h2>עקרונות תכנון</h2>
+
+      <div class="card">
+        <div class="card-title">&#9935; מודולריות</div>
+        <p>
+          כל מערכת (חומרים, תאורה, צללים, אפקטים, ביצועים) היא מודול עצמאי
+          שמתקשר עם האחרים רק דרך <span class="ltr">Event Bus</span> מטופס.
+          אפשר לפתח, לבדוק, ולהחליף כל מודול בנפרד.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">&#128260; Progressive Enhancement</div>
+        <p>
+          <span class="ltr">WebGPU</span> ראשי עם נפילה חיננית ל-<span class="ltr">WebGL2</span>.
+          הדגל <code>isWebGPU</code> נבדק בדיוק בשני מקומות: מערכת החומרים (בחירה בין
+          <span class="ltr">Node Materials</span> ל-<span class="ltr">Standard Materials</span>)
+          ושרשרת האפקטים (בחירה בין <span class="ltr">TSL PostProcessing</span> ל-<span class="ltr">EffectComposer</span>).
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">&#9889; Adaptive Quality</div>
+        <p>
+          מכונת מצבים שמודדת <span class="ltr">FPS</span> בזמן-אמת ומתאימה את רמת האיכות
+          אוטומטית. שיפור ושיפוט (<span class="ltr">upgrade/degrade</span>) עם
+          <span class="ltr">hysteresis</span> למניעת "קפיצות" מעצבנות.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== Module Map ===== -->
+    <section>
+      <h2>מפת מודולים</h2>
+
+      <pre><code><span class="cm">src/</span>
+├── <span class="tp">core/</span>
+│   ├── renderer.ts          <span class="cm">← WebGPU/WebGL2 factory</span>
+│   ├── scene-manager.ts     <span class="cm">← Scene, Camera, Controls</span>
+│   ├── quality-presets.ts   <span class="cm">← Quality tier definitions</span>
+│   └── event-bus.ts         <span class="cm">← Typed EventEmitter</span>
+│
+├── <span class="tp">loading/</span>
+│   ├── asset-loader.ts      <span class="cm">← GLTF + Draco + KTX2 + Meshopt</span>
+│   ├── progressive-loader.ts <span class="cm">← 3-stage loading pipeline</span>
+│   └── texture-manager.ts   <span class="cm">← Adaptive resolution per device</span>
+│
+├── <span class="tp">materials/</span>
+│   ├── material-system.ts   <span class="cm">← Scene graph traversal + upgrade</span>
+│   ├── pbr-extensions.ts    <span class="cm">← KHR extension mapping</span>
+│   └── presets.ts           <span class="cm">← Material preset library</span>
+│
+├── <span class="tp">lighting/</span>
+│   ├── environment.ts       <span class="cm">← HDR → PMREM pipeline</span>
+│   ├── light-rig.ts         <span class="cm">← Studio/Outdoor/Product presets</span>
+│   └── ground-plane.ts      <span class="cm">← Contact shadow + reflection</span>
+│
+├── <span class="tp">shadows/</span>
+│   ├── shadow-system.ts     <span class="cm">← Shadow map configuration</span>
+│   └── pcss.ts              <span class="cm">← PCSS soft shadow impl</span>
+│
+├── <span class="tp">post-processing/</span>
+│   ├── pipeline.ts          <span class="cm">← Effect chain manager</span>
+│   ├── effects.ts           <span class="cm">← SSAO, Bloom, SSR, DOF</span>
+│   └── tone-mapping.ts      <span class="cm">← ACES + color grading</span>
+│
+├── <span class="tp">performance/</span>
+│   ├── frame-budget.ts      <span class="cm">← Adaptive quality state machine</span>
+│   ├── lod-manager.ts       <span class="cm">← Level of detail switching</span>
+│   └── stats.ts             <span class="cm">← FPS/memory monitoring</span>
+│
+├── <span class="tp">path-tracing/</span>          <span class="cm">← WebGPU only</span>
+│   ├── path-tracer.ts       <span class="cm">← Compute shader path tracer</span>
+│   ├── bvh.ts               <span class="cm">← BVH acceleration structure</span>
+│   ├── openpbr-material.ts  <span class="cm">← OpenPBR BSDF in WGSL</span>
+│   └── denoiser.ts          <span class="cm">← À-trous wavelet denoiser</span>
+│
+├── <span class="tp">animation/</span>
+│   ├── animation-manager.ts <span class="cm">← Playback, blending, scrub</span>
+│   └── animation-ui.ts      <span class="cm">← Transport controls overlay</span>
+│
+├── viewer.ts                <span class="cm">← Public API class</span>
+└── index.ts                 <span class="cm">← Entry point + exports</span></code></pre>
+    </section>
+
+    <!-- ===== Rendering Pipeline ===== -->
+    <section>
+      <h2>תרשים <span class="ltr">Rendering Pipeline</span></h2>
+
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-icon">&#128230;</div>
+          <div><strong>Input:</strong> Model File (.glb / .gltf)</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#9881;</div>
+          <div><strong>Decompress:</strong> Draco (geometry, WebWorker) + KTX2 (textures, WebWorker)</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#128295;</div>
+          <div><strong>Assemble:</strong> GLTFLoader &rarr; Scene Graph with meshes, materials, animations</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#127912;</div>
+          <div><strong>Upgrade Materials:</strong> KHR extensions &rarr; MeshPhysicalMaterial properties</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#9728;</div>
+          <div><strong>Lighting:</strong> HDR environment (PMREM IBL) + 3-point light rig</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#127753;</div>
+          <div><strong>Shadows:</strong> PCSS shadow maps (variable penumbra)</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#128248;</div>
+          <div><strong>Rasterize:</strong> WebGPURenderer / WebGLRenderer &rarr; HDR framebuffer</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#10024;</div>
+          <div><strong>Post-Process:</strong> SSAO &rarr; SSR &rarr; Bloom &rarr; ACES Tone Map &rarr; AA &rarr; Vignette</div>
+        </div>
+        <div class="pipeline-arrow">&#8595;</div>
+        <div class="pipeline-step">
+          <div class="step-icon">&#128421;</div>
+          <div><strong>Output:</strong> Final pixel &rarr; sRGB display</div>
+        </div>
+      </div>
+
+      <div class="info-box note">
+        <div class="info-box-title">&#128260; מצב Path Tracing (אופציונלי)</div>
+        <p>
+          כשמופעל, מחליף את שלבי <span class="ltr">Rasterize</span> ו-<span class="ltr">Post-Process</span>
+          ב-<span class="ltr">Compute Shader</span> שמבצע מעקב קרניים מלא + <span class="ltr">denoising</span>.
+          הפלט מוזן ישירות ל-<span class="ltr">tone mapping</span> ו-<span class="ltr">AA</span>.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== Data Flow ===== -->
+    <section>
+      <h2>זרימת תקשורת בין מודולים</h2>
+      <pre><code><span class="cm">Event Bus - Typed Messages</span>
+
+AssetLoader ──<span class="str">'model:loaded'</span>──▶ SceneManager (add to scene)
+                                    ├──▶ MaterialSystem (traverse &amp; upgrade)
+                                    ├──▶ ShadowSystem (configure shadow maps)
+                                    ├──▶ AnimationManager (register clips)
+                                    └──▶ LightRig (fit to model bounds)
+
+FrameBudget ──<span class="str">'quality:changed'</span>──▶ ShadowSystem (adjust resolution)
+                                     ├──▶ PostProcessing (toggle effects)
+                                     ├──▶ TextureManager (cap resolution)
+                                     └──▶ LODManager (adjust bias)
+
+Environment ──<span class="str">'env:loaded'</span>──▶ Scene (set environment map)
+
+User API    ──<span class="str">'settings:*'</span>──▶ All modules (reconfigure)</code></pre>
+    </section>
+
+    <!-- ===== Dependencies ===== -->
+    <section>
+      <h2>תלויות</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>Package</th><th>Version</th><th>Type</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>three</code></td><td>^0.171.0</td><td>Runtime</td><td>Core 3D engine + all addons</td></tr>
+            <tr><td><code>typescript</code></td><td>^5.4</td><td>Dev</td><td>Type safety</td></tr>
+            <tr><td><code>vite</code></td><td>^6.0</td><td>Dev</td><td>Build tool + HMR</td></tr>
+            <tr><td><code>@types/three</code></td><td>^0.171.0</td><td>Dev</td><td>Three.js type definitions</td></tr>
+            <tr><td><code>lil-gui</code></td><td>^0.19</td><td>Dev (optional)</td><td>Debug UI panel</td></tr>
+            <tr><td><code>stats.js</code></td><td>^0.17</td><td>Dev (optional)</td><td>FPS/memory overlay</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>רק תלות ריצה אחת:</strong> <code>three</code>. כל השאר (טוענים, בקרים, אפקטים)
+        הם <span class="ltr">addons</span> שמגיעים עם <span class="ltr">Three.js</span>.
+      </p>
+    </section>
+
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>

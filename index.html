@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Viewer - Dev</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #2a2a32; overflow: hidden; font-family: system-ui, sans-serif; }
+    #canvas { display: block; width: 100vw; height: 100vh; }
+
+    /* Control Panel */
+    #panel {
+      position: fixed; top: 0; right: 0; width: 320px; height: 100vh;
+      background: #1b1b23; overflow-y: auto;
+      box-shadow: -2px 0 20px rgba(0,0,0,0.3); font-size: 12px; color: #ccc;
+      z-index: 50; scrollbar-width: thin; scrollbar-color: #333 #1b1b23;
+    }
+    #panel::-webkit-scrollbar { width: 5px; }
+    #panel::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    #panel-header { padding: 16px 18px; background: #222230; border-bottom: 1px solid #2a2a35; }
+    #panel-header h2 { font-size: 16px; color: #fff; margin-bottom: 4px; font-weight: 600; letter-spacing: -0.01em; }
+    #panel-header .sub { font-size: 10px; color: #666; font-family: monospace; }
+
+    /* Collapsible Group */
+    .group { border-bottom: 1px solid #252530; }
+    .group-header {
+      padding: 10px 18px; cursor: pointer; display: flex; justify-content: space-between;
+      align-items: center; background: #1f1f28; transition: background 0.15s; user-select: none;
+    }
+    .group-header:hover { background: #252530; }
+    .group-title { font-size: 11px; font-weight: 600; color: #aaa; display: flex; align-items: center; gap: 8px; }
+    .group-title .icon { font-size: 14px; opacity: 0.7; }
+    .group-arrow { font-size: 10px; color: #555; transition: transform 0.2s; }
+    .group.collapsed .group-arrow { transform: rotate(-90deg); }
+    .group.collapsed .group-body { display: none; }
+    .group-body { padding: 8px 18px 12px; }
+
+    /* Section inside group */
+    .section { padding: 6px 0; }
+    .section-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #555; margin: 8px 0 6px; }
+    .ctrl-row { margin-bottom: 5px; }
+    .ctrl-label { font-size: 10px; color: #777; display: flex; justify-content: space-between; }
+    .ctrl-label .val { color: #6b9fff; font-weight: 600; font-family: monospace; font-size: 10px; }
+    .ctrl-row input[type="range"] {
+      width: 100%; margin-top: 2px; accent-color: #6b9fff; height: 4px;
+      -webkit-appearance: none; background: #2a2a35; border-radius: 2px; outline: none;
+    }
+    .ctrl-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+      background: #6b9fff; cursor: pointer; border: 2px solid #1b1b23;
+    }
+    .ctrl-row label { font-size: 11px; color: #999; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .ctrl-row input[type="checkbox"] { accent-color: #6b9fff; }
+    .ctrl-row select {
+      width: 100%; font-size: 10px; padding: 5px 8px; background: #252530; color: #ccc;
+      border: 1px solid #333; border-radius: 4px; outline: none;
+    }
+    .btn-group { display: flex; gap: 3px; flex-wrap: wrap; }
+    .btn-group button {
+      padding: 4px 10px; border: 1px solid #333; border-radius: 4px;
+      background: #252530; color: #999; cursor: pointer; font-size: 10px; transition: all 0.15s;
+    }
+    .btn-group button:hover { background: #2a2a38; color: #ccc; }
+    .btn-group button.active { background: #3b5fad; color: #fff; border-color: #5580d0; }
+    .action-btn {
+      padding: 5px 12px; border: 1px solid #333; border-radius: 5px;
+      background: #252530; color: #aaa; cursor: pointer; font-size: 10px; transition: all 0.15s; width: 100%;
+    }
+    .action-btn:hover { background: #2a2a38; color: #fff; }
+    .action-btn.primary { background: #3b5fad; color: #fff; border-color: #5580d0; }
+    .action-btn.primary:hover { background: #4a6fc0; }
+    .status-bar {
+      padding: 6px 10px; margin: 8px 0 4px; border-radius: 5px; font-size: 11px;
+    }
+    .status-bar.loading { background: rgba(217,119,6,0.15); color: #f59e0b; }
+    .status-bar.ready { background: rgba(16,185,129,0.15); color: #10b981; }
+    .status-bar.error { background: rgba(239,68,68,0.15); color: #ef4444; }
+    #debug { font-size: 10px; color: #666; font-family: monospace; line-height: 1.6; }
+    #debug strong { color: #aaa; font-family: system-ui; }
+    #debug .feat { color: #6b9fff; }
+    .color-input {
+      width: 32px; height: 22px; border: 1px solid #333; border-radius: 4px;
+      padding: 0; cursor: pointer; background: none;
+    }
+    .inline-row { display: flex; gap: 6px; align-items: center; }
+    .inline-row .ctrl-label { flex: 1; }
+    .sep { height: 1px; background: #252530; margin: 8px 0; }
+    .hint { font-size: 9px; color: #555; margin-top: 2px; }
+
+    /* Drop zone */
+    #drop-zone {
+      position: fixed; top: 0; left: 0; right: 300px; bottom: 0;
+      background: rgba(37,99,235,0.12); border: 3px dashed #2563eb;
+      display: none; align-items: center; justify-content: center;
+      font-size: 22px; color: #2563eb; font-weight: 600; z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="drop-zone">Drop .glb / .gltf file here</div>
+
+  <div id="panel">
+    <div id="panel-header">
+      <h2>3D Viewer</h2>
+      <div class="sub" id="renderer-info">Initializing...</div>
+      <div class="status-bar loading" id="status">Loading...</div>
+    </div>
+
+    <!-- ========== SCENE ========== -->
+    <div class="group">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#9728;</span> Scene &amp; Environment</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="section-label">Environment Map</div>
+        <div class="ctrl-row">
+          <div class="btn-group" id="env-btns">
+            <button class="active" data-env="studio">Studio</button>
+            <button data-env="outdoor">Outdoor</button>
+            <button data-env="sunset">Sunset</button>
+            <button data-env="none">None</button>
+          </div>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Intensity <span class="val" id="v-env-int">1.00</span></div>
+          <input type="range" id="ctrl-env-intensity" min="0" max="5" step="0.05" value="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Rotation <span class="val" id="v-env-rot">0</span>&deg;</div>
+          <input type="range" id="ctrl-env-rotation" min="0" max="360" step="5" value="0">
+        </div>
+
+        <div class="sep"></div>
+        <div class="section-label">Background</div>
+        <div class="inline-row">
+          <div class="ctrl-label">Gradient</div>
+          <input type="color" id="ctrl-bg-center" value="#555560" class="color-input" title="Center">
+          <input type="color" id="ctrl-bg-mid" value="#35353d" class="color-input" title="Mid">
+          <input type="color" id="ctrl-bg-edge" value="#1c1c22" class="color-input" title="Edge">
+        </div>
+        <div class="ctrl-row">
+          <label><input type="checkbox" id="ctrl-show-env-bg"> Use HDR as background</label>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Blur <span class="val" id="v-bg-blur">0.50</span></div>
+          <input type="range" id="ctrl-bg-blur" min="0" max="1" step="0.05" value="0.5">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Brightness <span class="val" id="v-bg-int">0.80</span></div>
+          <input type="range" id="ctrl-bg-int" min="0" max="2" step="0.05" value="0.8">
+        </div>
+
+        <div class="sep"></div>
+        <div class="section-label">Exposure &amp; Color</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Exposure <span class="val" id="v-exposure">1.00</span></div>
+          <input type="range" id="ctrl-exposure" min="0.05" max="5" step="0.05" value="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Tone Mapping <span class="val" id="v-tone">ACES</span></div>
+          <div class="btn-group" id="tone-btns">
+            <button class="active" data-val="4">ACES</button>
+            <button data-val="6">AgX</button>
+            <button data-val="5">Neutral</button>
+            <button data-val="1">Linear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== LIGHTING ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#128161;</span> Lighting</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="section-label">Key Light (main + shadows)</div>
+        <div class="inline-row">
+          <label><input type="checkbox" id="ctrl-key-on" checked></label>
+          <div style="flex:1"><div class="ctrl-label">Intensity <span class="val" id="v-key">0.80</span></div>
+          <input type="range" id="ctrl-key" min="0" max="10" step="0.1" value="0.8"></div>
+          <input type="color" id="ctrl-key-color" value="#ffffff" class="color-input">
+        </div>
+        <div class="ctrl-row"><div class="ctrl-label">Position X <span class="val" id="v-key-x">5</span></div><input type="range" id="ctrl-key-x" min="-15" max="15" step="0.5" value="5"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Position Y <span class="val" id="v-key-y">8</span></div><input type="range" id="ctrl-key-y" min="0" max="20" step="0.5" value="8"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Position Z <span class="val" id="v-key-z">5</span></div><input type="range" id="ctrl-key-z" min="-15" max="15" step="0.5" value="5"></div>
+
+        <div class="sep"></div>
+        <div class="section-label">Fill Light</div>
+        <div class="inline-row">
+          <label><input type="checkbox" id="ctrl-fill-on" checked></label>
+          <div style="flex:1"><div class="ctrl-label">Intensity <span class="val" id="v-fill">0.30</span></div>
+          <input type="range" id="ctrl-fill" min="0" max="5" step="0.1" value="0.3"></div>
+          <input type="color" id="ctrl-fill-color" value="#b4c6e0" class="color-input">
+        </div>
+        <div class="ctrl-row"><div class="ctrl-label">X <span class="val" id="v-fill-x">-4</span></div><input type="range" id="ctrl-fill-x" min="-15" max="15" step="0.5" value="-4"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Y <span class="val" id="v-fill-y">3</span></div><input type="range" id="ctrl-fill-y" min="0" max="20" step="0.5" value="3"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Z <span class="val" id="v-fill-z">2</span></div><input type="range" id="ctrl-fill-z" min="-15" max="15" step="0.5" value="2"></div>
+
+        <div class="sep"></div>
+        <div class="section-label">Rim Light (backlight)</div>
+        <div class="inline-row">
+          <label><input type="checkbox" id="ctrl-rim-on"></label>
+          <div style="flex:1"><div class="ctrl-label">Intensity <span class="val" id="v-rim">0.00</span></div>
+          <input type="range" id="ctrl-rim" min="0" max="5" step="0.1" value="0"></div>
+          <input type="color" id="ctrl-rim-color" value="#ffeedd" class="color-input">
+        </div>
+        <div class="ctrl-row"><div class="ctrl-label">X <span class="val" id="v-rim-x">-2</span></div><input type="range" id="ctrl-rim-x" min="-15" max="15" step="0.5" value="-2"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Y <span class="val" id="v-rim-y">6</span></div><input type="range" id="ctrl-rim-y" min="0" max="20" step="0.5" value="6"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Z <span class="val" id="v-rim-z">-6</span></div><input type="range" id="ctrl-rim-z" min="-15" max="15" step="0.5" value="-6"></div>
+
+        <div class="sep"></div>
+        <div class="section-label">Ambient</div>
+        <div class="inline-row">
+          <div style="flex:1"><div class="ctrl-label">Intensity <span class="val" id="v-ambient">0.40</span></div>
+          <input type="range" id="ctrl-ambient" min="0" max="10" step="0.1" value="0.4"></div>
+          <input type="color" id="ctrl-ambient-color" value="#ffffff" class="color-input">
+        </div>
+
+        <div class="sep"></div>
+        <div class="section-label">Shadows</div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-shadow-on" checked> Enable shadows</label></div>
+        <div class="ctrl-row"><div class="ctrl-label">Darkness <span class="val" id="v-sh-dark">0.80</span></div><input type="range" id="ctrl-sh-dark" min="0" max="3" step="0.05" value="0.8"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Softness <span class="val" id="v-sh-radius">8</span></div><input type="range" id="ctrl-sh-radius" min="0" max="30" step="1" value="8"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Bias <span class="val" id="v-sh-bias">-0.0003</span></div><input type="range" id="ctrl-sh-bias" min="-0.01" max="0.01" step="0.0001" value="-0.0003"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Normal Bias <span class="val" id="v-sh-nbias">0.030</span></div><input type="range" id="ctrl-sh-nbias" min="0" max="0.2" step="0.005" value="0.03"></div>
+      </div>
+    </div>
+
+    <!-- ========== MATERIALS ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#127912;</span> Materials</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="section-label">Apply PBR Material</div>
+        <div class="hint">Override model materials with PBR textures from ambientCG (CC0)</div>
+        <div id="material-grid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin:8px 0;">
+          <div class="mat-card" data-mat="wood" style="cursor:pointer; border:1px solid #333; border-radius:6px; overflow:hidden; transition:border 0.15s;">
+            <img src="/materials/wood/Wood095.png" style="width:100%; aspect-ratio:1; object-fit:cover; display:block;">
+            <div style="padding:4px; font-size:9px; text-align:center; color:#aaa;">Wood</div>
+          </div>
+          <div class="mat-card" data-mat="metal" style="cursor:pointer; border:1px solid #333; border-radius:6px; overflow:hidden; transition:border 0.15s;">
+            <img src="/materials/metal/Metal032.png" style="width:100%; aspect-ratio:1; object-fit:cover; display:block;">
+            <div style="padding:4px; font-size:9px; text-align:center; color:#aaa;">Metal</div>
+          </div>
+          <div class="mat-card" data-mat="marble" style="cursor:pointer; border:1px solid #333; border-radius:6px; overflow:hidden; transition:border 0.15s;">
+            <img src="/materials/marble/Marble006.png" style="width:100%; aspect-ratio:1; object-fit:cover; display:block;">
+            <div style="padding:4px; font-size:9px; text-align:center; color:#aaa;">Marble</div>
+          </div>
+        </div>
+        <div class="ctrl-row"><button id="btn-mat-reset" class="action-btn">Reset to Original</button></div>
+        <div class="sep"></div>
+        <div class="section-label">Texture Settings</div>
+        <div class="ctrl-row"><div class="ctrl-label">Tiling <span class="val" id="v-mat-tile">1</span></div><input type="range" id="ctrl-mat-tile" min="1" max="20" step="1" value="1"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Normal Strength <span class="val" id="v-mat-normal">1.00</span></div><input type="range" id="ctrl-mat-normal" min="0" max="3" step="0.1" value="1"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Roughness <span class="val" id="v-mat-rough">1.00</span></div><input type="range" id="ctrl-mat-rough" min="0" max="2" step="0.05" value="1"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Metalness <span class="val" id="v-mat-metal">1.00</span></div><input type="range" id="ctrl-mat-metal" min="0" max="2" step="0.05" value="1"></div>
+      </div>
+    </div>
+
+    <!-- ========== MODEL ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#128230;</span> Model</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="section-label">Transform</div>
+        <div class="ctrl-row"><div class="ctrl-label">Scale <span class="val" id="v-scale">1.00</span></div><input type="range" id="ctrl-scale" min="0.01" max="10" step="0.01" value="1"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Rotate Y <span class="val" id="v-rot-y">0</span>&deg;</div><input type="range" id="ctrl-rot-y" min="0" max="360" step="1" value="0"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Offset Y <span class="val" id="v-offset-y">0.00</span></div><input type="range" id="ctrl-offset-y" min="-5" max="5" step="0.01" value="0"></div>
+
+        <div class="sep"></div>
+        <div class="section-label">Display</div>
+        <div class="ctrl-row">
+          <div class="btn-group" id="display-btns">
+            <button class="active" data-val="normal">Shaded</button>
+            <button data-val="wireframe">Wireframe</button>
+            <button data-val="normals">Normals</button>
+            <button data-val="depth">Depth</button>
+          </div>
+        </div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-smooth" checked> Auto smooth (low-poly)</label></div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-bbox"> Bounding box</label></div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-grid"> Grid</label></div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-axes"> Axes helper</label></div>
+
+        <div class="sep"></div>
+        <div class="section-label">Ground Plane</div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-ground-on" checked> Show ground</label></div>
+        <div class="ctrl-row"><div class="ctrl-label">Opacity <span class="val" id="v-ground-op">0.50</span></div><input type="range" id="ctrl-ground-opacity" min="0" max="1" step="0.05" value="0.5"></div>
+        <div class="inline-row">
+          <div style="flex:1"><div class="ctrl-label">Roughness <span class="val" id="v-ground-rough">0.85</span></div><input type="range" id="ctrl-ground-rough" min="0" max="1" step="0.01" value="0.85"></div>
+          <input type="color" id="ctrl-ground-color" value="#999999" class="color-input">
+        </div>
+        <div class="ctrl-row"><div class="ctrl-label">Metalness <span class="val" id="v-ground-metal">0.00</span></div><input type="range" id="ctrl-ground-metal" min="0" max="1" step="0.01" value="0"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Size <span class="val" id="v-ground-size">50</span></div><input type="range" id="ctrl-ground-size" min="5" max="200" step="5" value="50"></div>
+      </div>
+    </div>
+
+    <!-- ========== CAMERA ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#127909;</span> Camera</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="ctrl-row"><div class="ctrl-label">Field of View <span class="val" id="v-fov">45</span>&deg;</div><input type="range" id="ctrl-fov" min="5" max="150" step="1" value="45"></div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-auto-rotate"> Auto rotate</label></div>
+        <div class="ctrl-row"><div class="ctrl-label">Rotate Speed <span class="val" id="v-rotate-speed">1.0</span></div><input type="range" id="ctrl-rotate-speed" min="0.1" max="10" step="0.1" value="1"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Damping <span class="val" id="v-damping">0.08</span></div><input type="range" id="ctrl-damping" min="0" max="0.5" step="0.01" value="0.08"></div>
+        <div class="ctrl-row"><button id="btn-reset-cam" class="action-btn">Reset Camera</button></div>
+
+        <div class="sep"></div>
+        <div class="section-label">Clipping</div>
+        <div class="ctrl-row"><div class="ctrl-label">Near <span class="val" id="v-near">0.01</span></div><input type="range" id="ctrl-near" min="0.001" max="1" step="0.001" value="0.01"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Far <span class="val" id="v-far">1000</span></div><input type="range" id="ctrl-far" min="10" max="10000" step="10" value="1000"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Min Distance <span class="val" id="v-min-dist">0.1</span></div><input type="range" id="ctrl-min-dist" min="0" max="10" step="0.1" value="0.1"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Max Distance <span class="val" id="v-max-dist">100</span></div><input type="range" id="ctrl-max-dist" min="10" max="500" step="10" value="100"></div>
+      </div>
+    </div>
+
+    <!-- ========== EFFECTS ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#10024;</span> Effects</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="section-label">Bloom (glow)</div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-bloom-on"> Enable bloom</label></div>
+        <div class="ctrl-row"><div class="ctrl-label">Intensity <span class="val" id="v-bloom-int">0.30</span></div><input type="range" id="ctrl-bloom-int" min="0" max="3" step="0.05" value="0.3"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Threshold <span class="val" id="v-bloom-thr">0.85</span></div><input type="range" id="ctrl-bloom-thr" min="0" max="1" step="0.05" value="0.85"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Radius <span class="val" id="v-bloom-rad">0.40</span></div><input type="range" id="ctrl-bloom-rad" min="0" max="2" step="0.05" value="0.4"></div>
+
+        <div class="sep"></div>
+        <div class="section-label">Fog</div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-fog-on"> Enable fog</label></div>
+        <div class="inline-row">
+          <div style="flex:1"><div class="ctrl-label">Near <span class="val" id="v-fog-near">10</span></div><input type="range" id="ctrl-fog-near" min="0" max="50" step="1" value="10"></div>
+          <input type="color" id="ctrl-fog-color" value="#35353d" class="color-input">
+        </div>
+        <div class="ctrl-row"><div class="ctrl-label">Far <span class="val" id="v-fog-far">50</span></div><input type="range" id="ctrl-fog-far" min="5" max="200" step="1" value="50"></div>
+      </div>
+    </div>
+
+    <!-- ========== ANIMATION ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#9654;</span> Animation</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="ctrl-row">
+          <select id="ctrl-anim-clip"><option value="">No animations</option></select>
+        </div>
+        <div class="ctrl-row" style="display:flex; gap:4px;">
+          <button id="btn-anim-play" class="action-btn" style="width:auto; flex:1;">&#9654; Play</button>
+          <button id="btn-anim-pause" class="action-btn" style="width:auto; flex:1;">&#10074;&#10074; Pause</button>
+          <button id="btn-anim-stop" class="action-btn" style="width:auto; flex:1;">&#9632; Stop</button>
+        </div>
+        <div class="ctrl-row"><div class="ctrl-label">Time <span class="val" id="v-anim-time">0.00</span>s</div><input type="range" id="ctrl-anim-time" min="0" max="1" step="0.01" value="0"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Speed <span class="val" id="v-anim-speed">1.00</span>x</div><input type="range" id="ctrl-anim-speed" min="0" max="3" step="0.1" value="1"></div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-anim-autoplay" checked> Auto play on load</label></div>
+      </div>
+    </div>
+
+    <!-- ========== PATH TRACING ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#128302;</span> Path Tracing <span style="font-size:9px;color:#555;font-weight:400;">beta</span></div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="hint">Hold camera still for progressive refinement</div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-pt-on"> Enable path tracing</label></div>
+        <div class="ctrl-row"><div class="ctrl-label">Bounces <span class="val" id="v-pt-bounces">3</span></div><input type="range" id="ctrl-pt-bounces" min="1" max="10" step="1" value="3"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Samples <span class="val" id="v-pt-samples">0</span></div></div>
+        <div class="hint" id="pt-status">Inactive</div>
+      </div>
+    </div>
+
+    <!-- ========== ADVANCED ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#9881;</span> Advanced</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div class="section-label">Renderer</div>
+        <div class="ctrl-row"><div class="ctrl-label">Pixel Ratio <span class="val" id="v-dpr">auto</span></div><input type="range" id="ctrl-dpr" min="0.25" max="3" step="0.25" value="1"></div>
+        <div class="ctrl-row"><div class="ctrl-label">Max Pixel Ratio <span class="val" id="v-max-dpr">2.0</span></div><input type="range" id="ctrl-max-dpr" min="0.25" max="3" step="0.25" value="2"></div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Color Space <span class="val" id="v-colorspace">sRGB</span></div>
+          <div class="btn-group" id="colorspace-btns">
+            <button class="active" data-val="srgb">sRGB</button>
+            <button data-val="linear">Linear</button>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="section-label">Performance</div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-frustum-cull" checked> Frustum culling</label></div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-sort-objects" checked> Sort objects</label></div>
+        <div class="ctrl-row"><label><input type="checkbox" id="ctrl-antialias" checked disabled> Antialias (reload needed)</label></div>
+        <div class="ctrl-row"><div class="ctrl-label">Ground Y Offset <span class="val" id="v-ground-y">0.00</span></div><input type="range" id="ctrl-ground-y" min="-5" max="5" step="0.01" value="0"></div>
+      </div>
+    </div>
+
+    <!-- ========== API CONSOLE ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#128187;</span> API Console</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <textarea id="api-input" style="width:100%; height:40px; font-family:monospace; font-size:10px; background:#252530; color:#ccc; border:1px solid #333; border-radius:4px; padding:6px; resize:vertical;" placeholder="viewer.setExposure(2)"></textarea>
+        <div style="display:flex; gap:4px; margin-top:4px;">
+          <button id="api-run" class="action-btn primary" style="width:auto; flex:1;">Run</button>
+          <button id="api-clear" class="action-btn" style="width:auto;">Clear</button>
+        </div>
+        <div id="api-output" style="margin-top:4px; font-family:monospace; font-size:9px; color:#666; max-height:60px; overflow-y:auto; white-space:pre-wrap;"></div>
+        <div style="margin-top:4px; font-size:9px; color:#444; line-height:1.8;">
+          <a href="#" class="api-quick" data-cmd="viewer.setExposure(2)" style="color:#6b9fff;">exposure</a> &middot;
+          <a href="#" class="api-quick" data-cmd="viewer.setAutoRotate(true, 2)" style="color:#6b9fff;">rotate</a> &middot;
+          <a href="#" class="api-quick" data-cmd="viewer.setWireframe(true)" style="color:#6b9fff;">wireframe</a> &middot;
+          <a href="#" class="api-quick" data-cmd="viewer.setFOV(25)" style="color:#6b9fff;">zoom</a> &middot;
+          <a href="#" class="api-quick" data-cmd="viewer.resetCamera()" style="color:#6b9fff;">reset</a> &middot;
+          <a href="#" class="api-quick" data-cmd="JSON.stringify(viewer.getModelInfo(), null, 1)" style="color:#6b9fff;">info</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== DEBUG ========== -->
+    <div class="group collapsed">
+      <div class="group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="group-title"><span class="icon">&#128200;</span> Debug Info</div>
+        <span class="group-arrow">&#9662;</span>
+      </div>
+      <div class="group-body">
+        <div id="debug">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-label">Color</div>
+        <input type="color" id="ctrl-fog-color" value="#35353d" class="color-input">
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-label">Near <span class="val" id="v-fog-near">10</span></div>
+        <input type="range" id="ctrl-fog-near" min="0" max="50" step="1" value="10">
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-label">Far <span class="val" id="v-fog-far">50</span></div>
+        <input type="range" id="ctrl-fog-far" min="5" max="200" step="1" value="50">
+      </div>
+    </div>
+
+    <!-- API Console -->
+    <div class="section">
+      <div class="section-title">API Console</div>
+      <div style="font-size:10px; color:#999; margin-bottom:4px;">Test the Viewer3D API directly</div>
+      <textarea id="api-input" style="width:100%; height:50px; font-family:monospace; font-size:11px; border:1px solid #ddd; border-radius:4px; padding:4px; resize:vertical;" placeholder="viewer.setExposure(2)"></textarea>
+      <div style="display:flex; gap:4px; margin-top:4px;">
+        <button id="api-run" style="padding:4px 12px; border:1px solid #2563eb; border-radius:4px; background:#2563eb; color:#fff; cursor:pointer; font-size:10px; flex:1;">Run</button>
+        <button id="api-clear" style="padding:4px 8px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer; font-size:10px;">Clear</button>
+      </div>
+      <div id="api-output" style="margin-top:4px; font-family:monospace; font-size:10px; color:#666; max-height:80px; overflow-y:auto; white-space:pre-wrap;"></div>
+      <div style="margin-top:6px; font-size:9px; color:#bbb;">
+        Quick:
+        <a href="#" class="api-quick" data-cmd="viewer.setExposure(2)">exposure</a> ·
+        <a href="#" class="api-quick" data-cmd="viewer.setAutoRotate(true, 2)">rotate</a> ·
+        <a href="#" class="api-quick" data-cmd="viewer.setWireframe(true)">wireframe</a> ·
+        <a href="#" class="api-quick" data-cmd="viewer.setFOV(25)">zoom</a> ·
+        <a href="#" class="api-quick" data-cmd="viewer.resetCamera()">reset</a> ·
+        <a href="#" class="api-quick" data-cmd="JSON.stringify(viewer.getModelInfo(), null, 1)">info</a>
+      </div>
+    </div>
+
+    <!-- Debug -->
+    <div class="section">
+      <div class="section-title">Debug Info</div>
+      <div id="debug">Loading...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    let THREE, isWebGPU = false;
+    try { THREE = await import('three/webgpu'); isWebGPU = true; }
+    catch { THREE = await import('three'); }
+
+    const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+    const { DRACOLoader } = await import('three/addons/loaders/DRACOLoader.js');
+    const { RGBELoader } = await import('three/addons/loaders/RGBELoader.js');
+    const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+    const { mergeVertices } = await import('three/addons/utils/BufferGeometryUtils.js');
+
+    // Path tracing (lazy loaded when enabled)
+    let ptRenderer = null;
+    let ptEnabled = false;
+
+    // Animation
+    let mixer = null;
+    let animClips = [];
+    let activeAction = null;
+    const animClock = new THREE.Clock();
+
+    // Post-processing imports
+    let pass, bloom, RenderPipeline;
+    let EffectComposer, RenderPass, UnrealBloomPass, OutputPass;
+    if (isWebGPU) {
+      ({ pass } = await import('three/tsl'));
+      ({ bloom } = await import('three/addons/tsl/display/BloomNode.js'));
+      RenderPipeline = THREE.PostProcessing;
+      console.log('[3D Viewer] PostProcessing class:', !!RenderPipeline);
+    } else {
+      ({ EffectComposer } = await import('three/addons/postprocessing/EffectComposer.js'));
+      ({ RenderPass } = await import('three/addons/postprocessing/RenderPass.js'));
+      ({ UnrealBloomPass } = await import('three/addons/postprocessing/UnrealBloomPass.js'));
+      ({ OutputPass } = await import('three/addons/postprocessing/OutputPass.js'));
+    }
+
+    const $ = id => document.getElementById(id);
+    const status = $('status');
+    const canvas = $('canvas');
+    const debug = $('debug');
+
+    // ====== SCENE ======
+    const scene = new THREE.Scene();
+    window.__scene = scene; // expose for QA testing
+
+    // Background gradient
+    let bgColors = { center: '#555560', mid: '#35353d', edge: '#1c1c22' };
+    function makeBgTexture() {
+      const s = 1024, c = document.createElement('canvas'); c.width = s; c.height = s;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(s/2, s*0.45, 0, s/2, s*0.45, s*0.75);
+      g.addColorStop(0, bgColors.center);
+      g.addColorStop(0.5, bgColors.mid);
+      g.addColorStop(1, bgColors.edge);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
+      return new THREE.CanvasTexture(c);
+    }
+    scene.background = makeBgTexture();
+
+    // ====== CAMERA ======
+    const camera = new THREE.PerspectiveCamera(45, (innerWidth - 300) / innerHeight, 0.01, 1000);
+    camera.position.set(3, 2, 5);
+
+    // ====== RENDERER ======
+    let renderer;
+    if (isWebGPU) {
+      renderer = new THREE.WebGPURenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+      await renderer.init();
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    } else {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth - 300, innerHeight);
+
+    $('renderer-info').textContent = `Renderer: ${isWebGPU ? 'WebGPU' : 'WebGL2'} | ${renderer.getSize(new THREE.Vector2()).x}x${renderer.getSize(new THREE.Vector2()).y}`;
+
+    // ====== CONTROLS ======
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+
+    // ====== ENVIRONMENT ======
+    const envPresets = { studio: '/env/studio.hdr', outdoor: '/env/outdoor.hdr', sunset: '/env/sunset.hdr' };
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    let currentEnvMap = null;
+    let showEnvBg = false;
+
+    async function loadEnvironment(name) {
+      if (name === 'none') { scene.environment = null; currentEnvMap = null; return; }
+      const hdr = await new RGBELoader().loadAsync(envPresets[name]);
+      currentEnvMap = pmremGenerator.fromEquirectangular(hdr).texture;
+      scene.environment = currentEnvMap;
+      scene.environmentIntensity = parseFloat($('ctrl-env-intensity').value);
+      if (showEnvBg) { scene.background = currentEnvMap; }
+      scene.backgroundBlurriness = parseFloat($('ctrl-bg-blur').value);
+      scene.backgroundIntensity = parseFloat($('ctrl-bg-int').value);
+      hdr.dispose();
+    }
+
+    // ====== LIGHTS ======
+    const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    keyLight.position.set(5, 8, 5);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    keyLight.shadow.camera.near = 0.1;
+    keyLight.shadow.camera.far = 100;
+    keyLight.shadow.camera.left = -10;
+    keyLight.shadow.camera.right = 10;
+    keyLight.shadow.camera.top = 10;
+    keyLight.shadow.camera.bottom = -10;
+    keyLight.shadow.bias = -0.0003;
+    keyLight.shadow.normalBias = 0.03;
+    keyLight.shadow.radius = 8;
+    scene.add(keyLight);
+    scene.add(keyLight.target);
+
+    const fillLight = new THREE.DirectionalLight(0xb4c6e0, 0.3);
+    fillLight.position.set(-4, 3, 2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffeedd, 0);
+    rimLight.position.set(-2, 6, -6);
+    scene.add(rimLight);
+
+    // ====== GROUND ======
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: 0x999999, roughness: 0.85, metalness: 0, transparent: true, opacity: 0.5
+    });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.01;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // ====== LOAD ENV ======
+    try { await loadEnvironment('studio'); } catch(e) { console.warn('HDR failed', e); }
+
+    // ====== POST-PROCESSING ======
+    let postPipeline = null;   // WebGPU
+    let composer = null;       // WebGL2
+    let bloomPassRef = null;   // reference for controls
+    let bloomEnabled = false;
+    let bloomIntensity = 0.3;
+    let bloomThreshold = 0.85;
+    let bloomRadius = 0.4;
+
+    if (isWebGPU && RenderPipeline) {
+      try {
+        postPipeline = new RenderPipeline(renderer);
+        const scenePass = pass(scene, camera);
+        const sceneColor = scenePass.getTextureNode('output');
+        bloomPassRef = bloom(sceneColor);
+        bloomPassRef.strength.value = 0; // Start disabled
+        postPipeline.outputNode = sceneColor.add(bloomPassRef);
+        console.log('[3D Viewer] WebGPU post-processing active');
+      } catch (e) {
+        console.warn('[3D Viewer] WebGPU post-processing failed:', e);
+        postPipeline = null;
+      }
+    } else if (!isWebGPU && EffectComposer) {
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(innerWidth - 300, innerHeight),
+        bloomIntensity, bloomRadius, bloomThreshold
+      );
+      bloomPassRef = bloomPass;
+      composer.addPass(bloomPass);
+      composer.addPass(new OutputPass());
+      console.log('[3D Viewer] WebGL2 post-processing active');
+    }
+
+    // ====== RENDER LOOP ======
+    let fps = 0, frameCount = 0, lastFpsTime = performance.now();
+    renderer.setAnimationLoop(() => {
+      controls.update();
+      // Update animation mixer
+      if (mixer) {
+        const delta = animClock.getDelta();
+        mixer.update(delta);
+        // Update time slider
+        if (activeAction) {
+          const t = activeAction.time / (activeAction.getClip().duration || 1);
+          $('ctrl-anim-time').value = t;
+          $('v-anim-time').textContent = activeAction.time.toFixed(2);
+        }
+      }
+      if (ptEnabled && ptRenderer) {
+        ptRenderer.renderSample();
+        $('v-pt-samples').textContent = ptRenderer.samples;
+        $('pt-status').textContent = `Accumulating: ${ptRenderer.samples} samples`;
+      } else if (postPipeline) {
+        postPipeline.render();
+      } else if (composer) {
+        composer.render();
+      } else {
+        renderer.render(scene, camera);
+      }
+      frameCount++;
+      const now = performance.now();
+      if (now - lastFpsTime >= 1000) {
+        fps = frameCount;
+        frameCount = 0;
+        lastFpsTime = now;
+      }
+    });
+
+    // ====== RESIZE ======
+    addEventListener('resize', () => {
+      const w = innerWidth - 300, h = innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      if (composer) composer.setSize(w, h);
+    });
+
+    status.className = 'status-bar ready';
+    status.textContent = 'Ready - drag & drop .glb file';
+
+    // ====== MODEL LOADING ======
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.setDRACOLoader(dracoLoader);
+
+    let currentModel = null;
+    let autoSmoothEnabled = true;
+
+    async function loadModel(url) {
+      status.className = 'status-bar loading';
+      status.textContent = 'Loading...';
+
+      if (currentModel) { scene.remove(currentModel); currentModel = null; }
+
+      return new Promise((resolve, reject) => {
+        gltfLoader.load(url, async (gltf) => {
+          gltf.scene.userData.__model = true;
+          gltf.scene.traverse(child => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (autoSmoothEnabled) autoSmooth(child);
+            }
+          });
+
+          if (isWebGPU) await renderer.compileAsync(gltf.scene, camera, scene);
+
+          currentModel = gltf.scene;
+          scene.add(currentModel);
+          fitCamera(currentModel);
+
+          // Setup animations
+          animClips = gltf.animations;
+          if (mixer) mixer.stopAllAction();
+          mixer = animClips.length > 0 ? new THREE.AnimationMixer(gltf.scene) : null;
+
+          // Populate animation dropdown
+          const clipSelect = $('ctrl-anim-clip');
+          clipSelect.innerHTML = animClips.length === 0
+            ? '<option value="">No animations</option>'
+            : animClips.map((c, i) => `<option value="${i}">${c.name || `Clip ${i}`} (${c.duration.toFixed(1)}s)</option>`).join('');
+
+          // Auto-play first animation
+          if (mixer && animClips.length > 0 && $('ctrl-anim-autoplay').checked) {
+            activeAction = mixer.clipAction(animClips[0]);
+            activeAction.play();
+          }
+
+          // Update path tracer scene
+          if (ptRenderer && ptEnabled) {
+            ptRenderer.setScene(scene, camera);
+          }
+
+          status.className = 'status-bar ready';
+          status.textContent = 'Model loaded';
+          updateDebug();
+          resolve(gltf);
+        },
+        (p) => { if (p.lengthComputable) status.textContent = `Loading: ${Math.round(p.loaded/p.total*100)}%`; },
+        (err) => { status.className = 'status-bar error'; status.textContent = `Error: ${err}`; reject(err); }
+        );
+      });
+    }
+
+    function fitCamera(obj) {
+      const box = new THREE.Box3().setFromObject(obj);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const dist = (maxDim / 2) / Math.tan((camera.fov * Math.PI / 180) / 2) * 1.5;
+
+      camera.position.set(center.x + dist * 0.4, center.y + dist * 0.3, center.z + dist * 0.8);
+      camera.near = dist * 0.001; camera.far = dist * 10;
+      camera.updateProjectionMatrix();
+      controls.target.copy(center); controls.update();
+
+      ground.position.y = box.min.y - 0.01;
+
+      // Fit shadow camera
+      const pad = maxDim * 0.8;
+      keyLight.shadow.camera.left = -pad; keyLight.shadow.camera.right = pad;
+      keyLight.shadow.camera.top = pad; keyLight.shadow.camera.bottom = -pad;
+      keyLight.shadow.camera.far = maxDim * 5;
+      keyLight.shadow.camera.updateProjectionMatrix();
+      keyLight.position.set(center.x + maxDim, center.y + maxDim * 1.5, center.z + maxDim);
+      keyLight.target.position.copy(center);
+      keyLight.target.updateMatrixWorld();
+    }
+
+    function autoSmooth(mesh) {
+      const geo = mesh.geometry; if (!geo) return;
+      const pos = geo.getAttribute('position'); if (!pos) return;
+      const tris = geo.index ? geo.index.count / 3 : pos.count / 3;
+      if (tris > 50000) return;
+      const merged = mergeVertices(geo, 0.0001);
+      merged.computeVertexNormals();
+      mesh.geometry = merged;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mats.forEach(m => { m.flatShading = false; m.needsUpdate = true; });
+    }
+
+    function updateDebug() {
+      if (!currentModel) { debug.innerHTML = 'No model'; return; }
+      let totalTris = 0; const meshes = [];
+      currentModel.traverse(c => {
+        if (!c.isMesh) return;
+        const g = c.geometry;
+        const t = g.index ? g.index.count / 3 : g.getAttribute('position').count / 3;
+        totalTris += t;
+        const mats = Array.isArray(c.material) ? c.material : [c.material];
+        mats.forEach(m => {
+          const f = [];
+          if (m.metalness > 0) f.push(`metal:${m.metalness.toFixed(1)}`);
+          if (m.roughness < 1) f.push(`rough:${m.roughness.toFixed(1)}`);
+          if (m.clearcoat > 0) f.push(`clearcoat:${m.clearcoat.toFixed(1)}`);
+          if (m.transmission > 0) f.push(`transmission:${m.transmission.toFixed(1)}`);
+          if (m.sheen > 0) f.push(`sheen:${m.sheen.toFixed(1)}`);
+          if (m.iridescence > 0) f.push(`iridescence:${m.iridescence.toFixed(1)}`);
+          if (m.anisotropy > 0) f.push(`anisotropy:${m.anisotropy.toFixed(1)}`);
+          if (m.flatShading) f.push('FLAT');
+          if (m.map) f.push('map');
+          if (m.normalMap) f.push('nrm');
+          if (m.aoMap) f.push('ao');
+          meshes.push({ name: c.name || '?', type: m.type.replace('Material',''), tris: Math.round(t), f });
+        });
+      });
+      // Renderer stats
+      const info = renderer.info;
+      const r = info.render || {};
+      const mem = info.memory || {};
+      const frameMs = fps > 0 ? (1000/fps).toFixed(1) : '?';
+
+      let h = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;">`;
+      h += `<div><strong>FPS</strong></div><div style="color:${fps>=55?'#059669':fps>=30?'#d97706':'#dc2626'}">${fps} (${frameMs}ms)</div>`;
+      h += `<div><strong>Triangles</strong></div><div>${totalTris.toLocaleString()}</div>`;
+      h += `<div><strong>Meshes</strong></div><div>${meshes.length}</div>`;
+      h += `<div><strong>Draw Calls</strong></div><div>${r.calls || 0}</div>`;
+      h += `<div><strong>Textures</strong></div><div>${mem.textures || 0}</div>`;
+      h += `<div><strong>Geometries</strong></div><div>${mem.geometries || 0}</div>`;
+      h += `<div><strong>Programs</strong></div><div>${info.programs?.length || 0}</div>`;
+      h += `<div><strong>Shadow</strong></div><div>${keyLight.castShadow?'ON':'OFF'} ${keyLight.shadow.mapSize.x}px</div>`;
+      h += `<div><strong>Bloom</strong></div><div>${bloomEnabled?'ON':'OFF'}</div>`;
+      h += `<div><strong>Renderer</strong></div><div>${isWebGPU?'WebGPU':'WebGL2'}</div>`;
+      h += `</div>`;
+      meshes.forEach(m => {
+        h += `<div style="margin-top:3px;border-top:1px solid #eee;padding-top:2px;"><strong>${m.name}</strong> <span style="color:#aaa">${m.type} ${m.tris.toLocaleString()}t</span><br><span class="feat">${m.f.join(', ') || 'basic'}</span></div>`;
+      });
+      debug.innerHTML = h;
+    }
+    setInterval(updateDebug, 2000);
+
+    // ====== HELPERS ======
+    const axesHelper = new THREE.AxesHelper(5); axesHelper.visible = false; scene.add(axesHelper);
+    const gridHelper = new THREE.GridHelper(20, 20, 0x666666, 0x444444); gridHelper.visible = false; scene.add(gridHelper);
+    let bboxHelper = null;
+    let savedMaterials = new Map(); // for display modes
+
+    // ====== WIRE UP CONTROLS ======
+    function S(id, cb) { // slider helper
+      const el = $(id);
+      el.addEventListener('input', () => cb(parseFloat(el.value)));
+    }
+    function BG(groupId, cb) { // button group helper
+      $(groupId).addEventListener('click', e => {
+        const btn = e.target.closest('button'); if (!btn) return;
+        $(groupId).querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        cb(btn);
+      });
+    }
+
+    // --- Renderer ---
+    BG('tone-btns', btn => { renderer.toneMapping = parseInt(btn.dataset.val); $('v-tone').textContent = btn.textContent; });
+    S('ctrl-exposure', v => { renderer.toneMappingExposure = v; $('v-exposure').textContent = v.toFixed(2); });
+    S('ctrl-dpr', v => { renderer.setPixelRatio(v); $('v-dpr').textContent = v.toFixed(2); });
+    BG('colorspace-btns', btn => {
+      renderer.outputColorSpace = btn.dataset.val === 'srgb' ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace;
+      $('v-colorspace').textContent = btn.textContent;
+    });
+
+    // --- Background ---
+    function updateBg() { if (!showEnvBg) scene.background = makeBgTexture(); }
+    $('ctrl-bg-center').addEventListener('input', e => { bgColors.center = e.target.value; updateBg(); });
+    $('ctrl-bg-mid').addEventListener('input', e => { bgColors.mid = e.target.value; updateBg(); });
+    $('ctrl-bg-edge').addEventListener('input', e => { bgColors.edge = e.target.value; updateBg(); });
+    $('ctrl-show-env-bg').addEventListener('change', e => {
+      showEnvBg = e.target.checked;
+      scene.background = showEnvBg && currentEnvMap ? currentEnvMap : makeBgTexture();
+    });
+    S('ctrl-bg-blur', v => { scene.backgroundBlurriness = v; $('v-bg-blur').textContent = v.toFixed(2); });
+    S('ctrl-bg-int', v => { scene.backgroundIntensity = v; $('v-bg-int').textContent = v.toFixed(2); });
+
+    // --- Environment ---
+    BG('env-btns', async btn => {
+      status.className = 'status-bar loading'; status.textContent = `Loading ${btn.dataset.env}...`;
+      await loadEnvironment(btn.dataset.env);
+      status.className = 'status-bar ready'; status.textContent = `Env: ${btn.dataset.env}`;
+    });
+    S('ctrl-env-intensity', v => {
+      scene.environmentIntensity = v;
+      $('v-env-int').textContent = v.toFixed(2);
+    });
+    S('ctrl-env-rotation', v => {
+      scene.environmentRotation.set(0, v * Math.PI / 180, 0);
+      $('v-env-rot').textContent = v;
+    });
+
+    // --- Key Light ---
+    $('ctrl-key-on').addEventListener('change', e => keyLight.visible = e.target.checked);
+    S('ctrl-key', v => { keyLight.intensity = v; $('v-key').textContent = v.toFixed(2); });
+    $('ctrl-key-color').addEventListener('input', e => keyLight.color.set(e.target.value));
+    S('ctrl-key-x', v => { keyLight.position.x = v; $('v-key-x').textContent = v; });
+    S('ctrl-key-y', v => { keyLight.position.y = v; $('v-key-y').textContent = v; });
+    S('ctrl-key-z', v => { keyLight.position.z = v; $('v-key-z').textContent = v; });
+
+    // --- Fill Light ---
+    $('ctrl-fill-on').addEventListener('change', e => fillLight.visible = e.target.checked);
+    S('ctrl-fill', v => { fillLight.intensity = v; $('v-fill').textContent = v.toFixed(2); });
+    $('ctrl-fill-color').addEventListener('input', e => fillLight.color.set(e.target.value));
+    S('ctrl-fill-x', v => { fillLight.position.x = v; $('v-fill-x').textContent = v; });
+    S('ctrl-fill-y', v => { fillLight.position.y = v; $('v-fill-y').textContent = v; });
+    S('ctrl-fill-z', v => { fillLight.position.z = v; $('v-fill-z').textContent = v; });
+
+    // --- Rim Light ---
+    $('ctrl-rim-on').addEventListener('change', e => rimLight.visible = e.target.checked);
+    S('ctrl-rim', v => { rimLight.intensity = v; $('v-rim').textContent = v.toFixed(2); });
+    $('ctrl-rim-color').addEventListener('input', e => rimLight.color.set(e.target.value));
+    S('ctrl-rim-x', v => { rimLight.position.x = v; $('v-rim-x').textContent = v; });
+    S('ctrl-rim-y', v => { rimLight.position.y = v; $('v-rim-y').textContent = v; });
+    S('ctrl-rim-z', v => { rimLight.position.z = v; $('v-rim-z').textContent = v; });
+
+    // --- Ambient ---
+    S('ctrl-ambient', v => { ambientLight.intensity = v; $('v-ambient').textContent = v.toFixed(2); });
+    $('ctrl-ambient-color').addEventListener('input', e => ambientLight.color.set(e.target.value));
+
+    // --- Shadows ---
+    $('ctrl-shadow-on').addEventListener('change', e => {
+      keyLight.castShadow = e.target.checked;
+      ground.receiveShadow = e.target.checked;
+      ground.material.needsUpdate = true;
+    });
+    S('ctrl-sh-dark', v => {
+      keyLight.intensity = v;
+      $('v-sh-dark').textContent = v.toFixed(2);
+    });
+    S('ctrl-sh-radius', v => { keyLight.shadow.radius = v; $('v-sh-radius').textContent = v; });
+    S('ctrl-sh-bias', v => { keyLight.shadow.bias = v; $('v-sh-bias').textContent = v.toFixed(4); });
+    S('ctrl-sh-nbias', v => { keyLight.shadow.normalBias = v; $('v-sh-nbias').textContent = v.toFixed(3); });
+
+    // --- Ground ---
+    $('ctrl-ground-on').addEventListener('change', e => ground.visible = e.target.checked);
+    S('ctrl-ground-opacity', v => { groundMat.opacity = v; $('v-ground-op').textContent = v.toFixed(2); });
+    $('ctrl-ground-color').addEventListener('input', e => groundMat.color.set(e.target.value));
+    S('ctrl-ground-rough', v => { groundMat.roughness = v; $('v-ground-rough').textContent = v.toFixed(2); });
+    S('ctrl-ground-metal', v => { groundMat.metalness = v; $('v-ground-metal').textContent = v.toFixed(2); });
+    S('ctrl-ground-size', v => {
+      ground.geometry.dispose();
+      ground.geometry = new THREE.PlaneGeometry(v, v);
+      ground.geometry.rotateX(-Math.PI / 2);
+      ground.rotation.set(0, 0, 0);
+      $('v-ground-size').textContent = v;
+    });
+    S('ctrl-ground-y', v => { ground.position.y += v; $('v-ground-y').textContent = v.toFixed(2); });
+
+    // --- Camera ---
+    S('ctrl-fov', v => { camera.fov = v; camera.updateProjectionMatrix(); $('v-fov').textContent = v; });
+    S('ctrl-near', v => { camera.near = v; camera.updateProjectionMatrix(); $('v-near').textContent = v; });
+    S('ctrl-far', v => { camera.far = v; camera.updateProjectionMatrix(); $('v-far').textContent = v; });
+    $('ctrl-auto-rotate').addEventListener('change', e => controls.autoRotate = e.target.checked);
+    S('ctrl-rotate-speed', v => { controls.autoRotateSpeed = v; $('v-rotate-speed').textContent = v.toFixed(1); });
+    S('ctrl-damping', v => { controls.dampingFactor = v; $('v-damping').textContent = v.toFixed(2); });
+    S('ctrl-min-dist', v => { controls.minDistance = v; $('v-min-dist').textContent = v.toFixed(1); });
+    S('ctrl-max-dist', v => { controls.maxDistance = v; $('v-max-dist').textContent = v; });
+    $('btn-reset-cam').addEventListener('click', () => { if (currentModel) fitCamera(currentModel); });
+
+    // --- Model ---
+    $('ctrl-smooth').addEventListener('change', e => autoSmoothEnabled = e.target.checked);
+    BG('display-btns', btn => {
+      const mode = btn.dataset.val;
+      $('v-display').textContent = btn.textContent;
+      if (!currentModel) return;
+      currentModel.traverse(c => {
+        if (!c.isMesh) return;
+        if (mode === 'normal') {
+          if (savedMaterials.has(c.uuid)) { c.material = savedMaterials.get(c.uuid); savedMaterials.delete(c.uuid); }
+          c.material.wireframe = false;
+        } else if (mode === 'wireframe') {
+          if (!savedMaterials.has(c.uuid)) savedMaterials.set(c.uuid, c.material);
+          c.material = c.material.clone(); c.material.wireframe = true;
+        } else if (mode === 'normals') {
+          if (!savedMaterials.has(c.uuid)) savedMaterials.set(c.uuid, c.material);
+          c.material = new THREE.MeshNormalMaterial();
+        } else if (mode === 'depth') {
+          if (!savedMaterials.has(c.uuid)) savedMaterials.set(c.uuid, c.material);
+          c.material = new THREE.MeshDepthMaterial();
+        } else if (mode === 'uv') {
+          if (!savedMaterials.has(c.uuid)) savedMaterials.set(c.uuid, c.material);
+          c.material = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x00ff00 });
+        }
+      });
+    });
+    S('ctrl-scale', v => { if (currentModel) currentModel.scale.setScalar(v); $('v-scale').textContent = v.toFixed(2); });
+    S('ctrl-rot-y', v => { if (currentModel) currentModel.rotation.y = v * Math.PI / 180; $('v-rot-y').textContent = v; });
+    S('ctrl-offset-y', v => { if (currentModel) currentModel.position.y = v; $('v-offset-y').textContent = v.toFixed(2); });
+    $('ctrl-bbox').addEventListener('change', e => {
+      if (bboxHelper) { scene.remove(bboxHelper); bboxHelper = null; }
+      if (e.target.checked && currentModel) {
+        bboxHelper = new THREE.BoxHelper(currentModel, 0xffff00);
+        scene.add(bboxHelper);
+      }
+    });
+    $('ctrl-axes').addEventListener('change', e => axesHelper.visible = e.target.checked);
+    $('ctrl-grid').addEventListener('change', e => gridHelper.visible = e.target.checked);
+
+    // --- Performance ---
+    S('ctrl-max-dpr', v => {
+      renderer.setPixelRatio(Math.min(devicePixelRatio, v));
+      $('v-max-dpr').textContent = v.toFixed(2);
+    });
+    $('ctrl-frustum-cull').addEventListener('change', e => {
+      if (currentModel) currentModel.traverse(c => { if (c.isMesh) c.frustumCulled = e.target.checked; });
+    });
+    $('ctrl-sort-objects').addEventListener('change', e => {
+      renderer.sortObjects = e.target.checked;
+    });
+
+    // --- Materials ---
+    const matDefs = {
+      wood: {
+        color: '/materials/wood/Wood095_1K-JPG_Color.jpg',
+        normal: '/materials/wood/Wood095_1K-JPG_NormalGL.jpg',
+        roughness: '/materials/wood/Wood095_1K-JPG_Roughness.jpg',
+        displacement: '/materials/wood/Wood095_1K-JPG_Displacement.jpg',
+        metalness: null,
+      },
+      metal: {
+        color: '/materials/metal/Metal032_1K-JPG_Color.jpg',
+        normal: '/materials/metal/Metal032_1K-JPG_NormalGL.jpg',
+        roughness: '/materials/metal/Metal032_1K-JPG_Roughness.jpg',
+        displacement: '/materials/metal/Metal032_1K-JPG_Displacement.jpg',
+        metalness: '/materials/metal/Metal032_1K-JPG_Metalness.jpg',
+      },
+      marble: {
+        color: '/materials/marble/Marble006_1K-JPG_Color.jpg',
+        normal: '/materials/marble/Marble006_1K-JPG_NormalGL.jpg',
+        roughness: '/materials/marble/Marble006_1K-JPG_Roughness.jpg',
+        displacement: '/materials/marble/Marble006_1K-JPG_Displacement.jpg',
+        metalness: null,
+      },
+    };
+
+    let originalMaterials = new Map();
+    let currentPBRMaterial = null;
+    let matTiling = 1, matNormalStr = 1, matRoughMul = 1, matMetalMul = 1;
+    const texLoader = new THREE.TextureLoader();
+
+    function loadTex(url) {
+      if (!url) return null;
+      const tex = texLoader.load(url);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(matTiling, matTiling);
+      return tex;
+    }
+
+    function applyMaterial(name) {
+      if (!currentModel) return;
+      const def = matDefs[name];
+      if (!def) return;
+
+      // Save originals on first apply
+      if (originalMaterials.size === 0) {
+        currentModel.traverse(c => {
+          if (c.isMesh) originalMaterials.set(c.uuid, c.material);
+        });
+      }
+
+      const albedo = loadTex(def.color);
+      if (albedo) albedo.colorSpace = THREE.SRGBColorSpace;
+
+      const mat = new THREE.MeshStandardMaterial({
+        map: albedo,
+        normalMap: loadTex(def.normal),
+        roughnessMap: loadTex(def.roughness),
+        metalnessMap: loadTex(def.metalness),
+        metalness: def.metalness ? 1.0 : 0.0,
+        roughness: 1.0,
+        normalScale: new THREE.Vector2(matNormalStr, matNormalStr),
+      });
+
+      currentModel.traverse(c => {
+        if (c.isMesh) {
+          c.material = mat;
+          // Ensure UV2 for AO if needed
+          if (c.geometry && !c.geometry.attributes.uv2 && c.geometry.attributes.uv) {
+            c.geometry.setAttribute('uv2', c.geometry.attributes.uv.clone());
+          }
+        }
+      });
+
+      currentPBRMaterial = mat;
+
+      // Highlight selected card
+      document.querySelectorAll('.mat-card').forEach(c => c.style.borderColor = '#333');
+      document.querySelector(`.mat-card[data-mat="${name}"]`).style.borderColor = '#6b9fff';
+    }
+
+    function resetMaterials() {
+      if (!currentModel || originalMaterials.size === 0) return;
+      currentModel.traverse(c => {
+        if (c.isMesh && originalMaterials.has(c.uuid)) {
+          c.material = originalMaterials.get(c.uuid);
+        }
+      });
+      originalMaterials.clear();
+      currentPBRMaterial = null;
+      document.querySelectorAll('.mat-card').forEach(c => c.style.borderColor = '#333');
+    }
+
+    function updateMatTiling() {
+      if (!currentPBRMaterial) return;
+      ['map', 'normalMap', 'roughnessMap', 'metalnessMap'].forEach(key => {
+        const tex = currentPBRMaterial[key];
+        if (tex) tex.repeat.set(matTiling, matTiling);
+      });
+    }
+
+    // Material card clicks
+    document.querySelectorAll('.mat-card').forEach(card => {
+      card.addEventListener('click', () => applyMaterial(card.dataset.mat));
+    });
+    $('btn-mat-reset').addEventListener('click', resetMaterials);
+
+    S('ctrl-mat-tile', v => { matTiling = v; $('v-mat-tile').textContent = v; updateMatTiling(); });
+    S('ctrl-mat-normal', v => {
+      matNormalStr = v; $('v-mat-normal').textContent = v.toFixed(2);
+      if (currentPBRMaterial) currentPBRMaterial.normalScale.set(v, v);
+    });
+    S('ctrl-mat-rough', v => {
+      matRoughMul = v; $('v-mat-rough').textContent = v.toFixed(2);
+      if (currentPBRMaterial) currentPBRMaterial.roughness = v;
+    });
+    S('ctrl-mat-metal', v => {
+      matMetalMul = v; $('v-mat-metal').textContent = v.toFixed(2);
+      if (currentPBRMaterial) currentPBRMaterial.metalness = v;
+    });
+
+    // --- Animation ---
+    S('ctrl-anim-speed', v => {
+      $('v-anim-speed').textContent = v.toFixed(2);
+      if (mixer) mixer.timeScale = v;
+    });
+    $('ctrl-anim-clip').addEventListener('change', e => {
+      if (!mixer) return;
+      const idx = parseInt(e.target.value);
+      if (isNaN(idx)) return;
+      if (activeAction) activeAction.stop();
+      activeAction = mixer.clipAction(animClips[idx]);
+      activeAction.play();
+    });
+    $('btn-anim-play').addEventListener('click', () => {
+      if (activeAction) activeAction.paused = false;
+      else if (mixer && animClips.length) { activeAction = mixer.clipAction(animClips[0]); activeAction.play(); }
+    });
+    $('btn-anim-pause').addEventListener('click', () => { if (activeAction) activeAction.paused = !activeAction.paused; });
+    $('btn-anim-stop').addEventListener('click', () => { if (activeAction) { activeAction.stop(); activeAction = null; } });
+    $('ctrl-anim-time').addEventListener('input', e => {
+      if (!activeAction) return;
+      const t = parseFloat(e.target.value) * activeAction.getClip().duration;
+      activeAction.time = t;
+      activeAction.paused = true;
+      mixer.update(0);
+      $('v-anim-time').textContent = t.toFixed(2);
+    });
+
+    // --- Path Tracing ---
+    $('ctrl-pt-on').addEventListener('change', async (e) => {
+      ptEnabled = e.target.checked;
+      if (ptEnabled && !ptRenderer) {
+        try {
+          $('pt-status').textContent = 'Loading path tracer...';
+          const { WebGLPathTracer } = await import('three-gpu-pathtracer');
+          ptRenderer = new WebGLPathTracer(renderer);
+          ptRenderer.setBounces(parseInt($('ctrl-pt-bounces').value));
+          ptRenderer.renderScale = 1;
+          if (currentModel) ptRenderer.setScene(scene, camera);
+          $('pt-status').textContent = 'Active - accumulating...';
+          console.log('[3D Viewer] Path tracer initialized');
+        } catch (err) {
+          console.error('Path tracer failed:', err);
+          $('pt-status').textContent = 'Error: ' + err.message;
+          ptEnabled = false;
+          e.target.checked = false;
+        }
+      }
+      if (!ptEnabled && ptRenderer) {
+        $('pt-status').textContent = 'Inactive';
+        $('v-pt-samples').textContent = '0';
+      }
+    });
+    S('ctrl-pt-bounces', v => {
+      $('v-pt-bounces').textContent = v;
+      if (ptRenderer) { ptRenderer.setBounces(v); ptRenderer.reset(); }
+    });
+    // Reset PT on camera move
+    controls.addEventListener('change', () => { if (ptRenderer && ptEnabled) ptRenderer.reset(); });
+
+    // --- Post-Processing ---
+    $('ctrl-bloom-on').addEventListener('change', e => {
+      bloomEnabled = e.target.checked;
+      if (isWebGPU && bloomPassRef) {
+        bloomPassRef.strength.value = e.target.checked ? parseFloat($('ctrl-bloom-int').value) : 0;
+      } else if (bloomPassRef) {
+        bloomPassRef.enabled = bloomEnabled;
+      }
+    });
+    S('ctrl-bloom-int', v => {
+      $('v-bloom-int').textContent = v.toFixed(2);
+      if (isWebGPU && bloomPassRef) {
+        bloomPassRef.strength.value = v;
+      } else if (bloomPassRef) {
+        bloomPassRef.strength = v;
+      }
+    });
+    S('ctrl-bloom-thr', v => {
+      $('v-bloom-thr').textContent = v.toFixed(2);
+      if (isWebGPU && bloomPassRef) {
+        bloomPassRef.threshold.value = v;
+      } else if (bloomPassRef) {
+        bloomPassRef.threshold = v;
+      }
+    });
+    S('ctrl-bloom-rad', v => {
+      $('v-bloom-rad').textContent = v.toFixed(2);
+      if (isWebGPU && bloomPassRef) {
+        bloomPassRef.radius.value = v;
+      } else if (bloomPassRef) {
+        bloomPassRef.radius = v;
+      }
+    });
+
+    // --- Fog ---
+    $('ctrl-fog-on').addEventListener('change', e => {
+      scene.fog = e.target.checked ? new THREE.Fog($('ctrl-fog-color').value, parseFloat($('ctrl-fog-near').value), parseFloat($('ctrl-fog-far').value)) : null;
+    });
+    $('ctrl-fog-color').addEventListener('input', e => { if (scene.fog) scene.fog.color.set(e.target.value); });
+    S('ctrl-fog-near', v => { if (scene.fog) scene.fog.near = v; $('v-fog-near').textContent = v; });
+    S('ctrl-fog-far', v => { if (scene.fog) scene.fog.far = v; $('v-fog-far').textContent = v; });
+
+    // ====== API CONSOLE ======
+    // Expose a viewer-like API object for the console
+    const viewer = {
+      setExposure: v => { renderer.toneMappingExposure = v; },
+      setBackground: c => { scene.background = new THREE.Color(c); },
+      setAutoRotate: (on, speed=1) => { controls.autoRotate = on; controls.autoRotateSpeed = speed; },
+      setFOV: v => { camera.fov = v; camera.updateProjectionMatrix(); },
+      setWireframe: on => { if (currentModel) currentModel.traverse(c => { if (c.material) c.material.wireframe = on; }); },
+      setModelScale: v => { if (currentModel) currentModel.scale.setScalar(v); },
+      setModelRotationY: deg => { if (currentModel) currentModel.rotation.y = deg * Math.PI / 180; },
+      resetCamera: () => { if (currentModel) { fitCamera(currentModel); } },
+      setKeyLight: o => { if (o.intensity !== undefined) keyLight.intensity = o.intensity; if (o.position) keyLight.position.set(...o.position); },
+      setFillLight: o => { if (o.intensity !== undefined) fillLight.intensity = o.intensity; },
+      setRimLight: o => { if (o.intensity !== undefined) rimLight.intensity = o.intensity; },
+      setAmbient: v => { ambientLight.intensity = v; },
+      setShadows: o => { if (o.enabled !== undefined) keyLight.castShadow = o.enabled; if (o.radius !== undefined) keyLight.shadow.radius = o.radius; },
+      setGround: o => { if (o.visible !== undefined) ground.visible = o.visible; if (o.opacity !== undefined) groundMat.opacity = o.opacity; },
+      setEnvIntensity: v => { scene.environmentIntensity = v; },
+      setEnvRotation: deg => { scene.environmentRotation.set(0, deg * Math.PI / 180, 0); },
+      getModelInfo: () => {
+        if (!currentModel) return null;
+        let tris = 0; const mats = [];
+        currentModel.traverse(c => { if (c.isMesh) { const g = c.geometry; tris += g.index ? g.index.count/3 : g.getAttribute('position').count/3; mats.push({ name: c.name, type: c.material?.type }); }});
+        return { meshes: mats.length, triangles: Math.round(tris), materials: mats };
+      },
+      get isWebGPU() { return isWebGPU; },
+      get fps() { return fps; },
+    };
+    window.viewer = viewer;
+
+    $('api-run').addEventListener('click', () => {
+      const code = $('api-input').value;
+      try {
+        const result = eval(code);
+        $('api-output').textContent = result !== undefined ? (typeof result === 'object' ? JSON.stringify(result, null, 1) : String(result)) : 'OK';
+        $('api-output').style.color = '#059669';
+      } catch (e) {
+        $('api-output').textContent = e.message;
+        $('api-output').style.color = '#dc2626';
+      }
+    });
+    $('api-clear').addEventListener('click', () => { $('api-output').textContent = ''; $('api-input').value = ''; });
+    document.querySelectorAll('.api-quick').forEach(a => {
+      a.addEventListener('click', e => { e.preventDefault(); $('api-input').value = a.dataset.cmd; $('api-run').click(); });
+    });
+
+    // ====== LOAD DEFAULT ======
+    try { await loadModel('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/DamagedHelmet/glTF-Binary/DamagedHelmet.glb'); } catch {}
+
+    // ====== DRAG & DROP ======
+    const dropZone = $('drop-zone');
+    document.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.display = 'flex'; });
+    document.addEventListener('dragleave', e => { if (!e.relatedTarget) dropZone.style.display = 'none'; });
+    document.addEventListener('drop', async e => {
+      e.preventDefault(); dropZone.style.display = 'none';
+      const file = e.dataTransfer?.files[0];
+      if (!file || (!file.name.endsWith('.glb') && !file.name.endsWith('.gltf'))) return;
+      await loadModel(URL.createObjectURL(file));
+    });
+  </script>
+</body>
+</html>

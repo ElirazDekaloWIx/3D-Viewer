@@ -56,7 +56,7 @@ function buildSidebar() {
       `).join('')}
     </div>
 
-    <div class="nav-section" style="margin-top: auto; padding-top: var(--spacing-lg); border-top: 1px solid var(--border-color);">
+    <div class="nav-section" style="margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border);">
       <div style="font-size: 0.75rem; color: var(--text-muted); direction: ltr; text-align: left;">
         v0.1.0 &middot; Last updated: ${new Date().toLocaleDateString('he-IL')}
       </div>

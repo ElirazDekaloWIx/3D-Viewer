@@ -134,6 +134,15 @@
         </div>
 
         <div class="sep"></div>
+        <div class="section-label">Poly Haven HDRIs <span style="color:#555;font-weight:400;font-size:9px;">CC0</span></div>
+        <div class="ctrl-row" style="display:flex;gap:4px;">
+          <input type="text" id="ph-hdri-search" placeholder="Search (studio, outdoor, night...)" style="flex:1;font-size:10px;padding:4px 8px;background:#252530;color:#ccc;border:1px solid #333;border-radius:4px;">
+          <button id="ph-hdri-btn" class="action-btn" style="width:auto;padding:4px 10px;">Browse</button>
+        </div>
+        <div id="ph-hdri-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px;max-height:180px;overflow-y:auto;"></div>
+        <div class="hint" id="ph-hdri-status"></div>
+
+        <div class="sep"></div>
         <div class="section-label">Background</div>
         <div class="inline-row">
           <div class="ctrl-label">Gradient</div>
@@ -255,6 +264,16 @@
           </div>
         </div>
         <div class="ctrl-row"><button id="btn-mat-reset" class="action-btn">Reset to Original</button></div>
+
+        <div class="sep"></div>
+        <div class="section-label">Poly Haven Materials <span style="color:#555;font-weight:400;font-size:9px;">CC0</span></div>
+        <div class="ctrl-row" style="display:flex;gap:4px;">
+          <input type="text" id="ph-mat-search" placeholder="Search (wood, brick, fabric...)" style="flex:1;font-size:10px;padding:4px 8px;background:#252530;color:#ccc;border:1px solid #333;border-radius:4px;">
+          <button id="ph-mat-btn" class="action-btn" style="width:auto;padding:4px 10px;">Browse</button>
+        </div>
+        <div id="ph-mat-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px;max-height:180px;overflow-y:auto;"></div>
+        <div class="hint" id="ph-mat-status"></div>
+
         <div class="sep"></div>
         <div class="section-label">Texture Settings</div>
         <div class="ctrl-row"><div class="ctrl-label">Tiling <span class="val" id="v-mat-tile">1</span></div><input type="range" id="ctrl-mat-tile" min="1" max="20" step="1" value="1"></div>
@@ -287,6 +306,12 @@
           </div>
         </div>
         <div class="ctrl-row"><label><input type="checkbox" id="ctrl-smooth" checked> Auto smooth (low-poly)</label></div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">Crease Angle <span class="val" id="v-crease">60</span>&deg;</div>
+          <input type="range" id="ctrl-crease" min="0" max="180" step="5" value="60">
+          <div class="hint">Edges with angle greater than this stay sharp</div>
+        </div>
+        <div class="ctrl-row"><button id="btn-apply-crease" class="action-btn">Apply Crease Smoothing</button></div>
         <div class="ctrl-row"><label><input type="checkbox" id="ctrl-bbox"> Bounding box</label></div>
         <div class="ctrl-row"><label><input type="checkbox" id="ctrl-grid"> Grid</label></div>
         <div class="ctrl-row"><label><input type="checkbox" id="ctrl-axes"> Axes helper</label></div>
@@ -1046,6 +1071,171 @@
     });
     $('ctrl-sort-objects').addEventListener('change', e => {
       renderer.sortObjects = e.target.checked;
+    });
+
+    // --- Poly Haven API ---
+    const PH_API = 'https://api.polyhaven.com';
+    const PH_THUMB = 'https://cdn.polyhaven.com/asset_img/thumbs';
+    const PH_DL = 'https://dl.polyhaven.org/file/ph-assets';
+
+    async function phSearch(type, query) {
+      // type = 'textures' or 'hdris'
+      const res = await fetch(`${PH_API}/assets?t=${type}`);
+      const data = await res.json();
+      let items = Object.entries(data).map(([id, a]) => ({ id, ...a }));
+      if (query) {
+        const q = query.toLowerCase();
+        items = items.filter(a =>
+          a.id.toLowerCase().includes(q) ||
+          a.name.toLowerCase().includes(q) ||
+          (a.categories || []).some(c => c.toLowerCase().includes(q)) ||
+          (a.tags || []).some(t => t.toLowerCase().includes(q))
+        );
+      }
+      items.sort((a,b) => (b.download_count||0) - (a.download_count||0));
+      return items.slice(0, 30);
+    }
+
+    function phThumb(id) { return `${PH_THUMB}/${id}.png`; }
+
+    function phMaterialURLs(id, res = '1k') {
+      // Construct 1K JPG URLs for standard PBR maps
+      return {
+        color: `${PH_DL}/Textures/jpg/${res}/${id}/${id}_diff_${res}.jpg`,
+        normal: `${PH_DL}/Textures/jpg/${res}/${id}/${id}_nor_gl_${res}.jpg`,
+        roughness: `${PH_DL}/Textures/jpg/${res}/${id}/${id}_rough_${res}.jpg`,
+        ao: `${PH_DL}/Textures/jpg/${res}/${id}/${id}_ao_${res}.jpg`,
+        displacement: `${PH_DL}/Textures/jpg/${res}/${id}/${id}_disp_${res}.jpg`,
+      };
+    }
+
+    function phHdriURL(id, res = '1k') {
+      return `${PH_DL}/HDRIs/hdr/${res}/${id}_${res}.hdr`;
+    }
+
+    async function showPhMaterials(query = '') {
+      const grid = $('ph-mat-grid');
+      const status = $('ph-mat-status');
+      status.textContent = 'Searching...';
+      grid.innerHTML = '';
+      try {
+        const items = await phSearch('textures', query);
+        status.textContent = `${items.length} results`;
+        items.forEach(item => {
+          const card = document.createElement('div');
+          card.style.cssText = 'cursor:pointer;border:1px solid #333;border-radius:4px;overflow:hidden;transition:border 0.15s;';
+          card.innerHTML = `<img src="${phThumb(item.id)}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" title="${item.name}"><div style="padding:2px 4px;font-size:8px;text-align:center;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}</div>`;
+          card.addEventListener('click', () => applyPhMaterial(item.id, item.name));
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    async function showPhHdris(query = '') {
+      const grid = $('ph-hdri-grid');
+      const status = $('ph-hdri-status');
+      status.textContent = 'Searching...';
+      grid.innerHTML = '';
+      try {
+        const items = await phSearch('hdris', query);
+        status.textContent = `${items.length} results`;
+        items.forEach(item => {
+          const card = document.createElement('div');
+          card.style.cssText = 'cursor:pointer;border:1px solid #333;border-radius:4px;overflow:hidden;transition:border 0.15s;';
+          card.innerHTML = `<img src="${phThumb(item.id)}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" title="${item.name}"><div style="padding:2px 4px;font-size:8px;text-align:center;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}</div>`;
+          card.addEventListener('click', () => applyPhHdri(item.id, item.name));
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    async function applyPhMaterial(id, name) {
+      const s = $('ph-mat-status');
+      s.textContent = `Loading ${name}...`;
+      if (!currentModel) { s.textContent = 'No model loaded'; return; }
+
+      const urls = phMaterialURLs(id, '1k');
+
+      // Save originals on first apply
+      if (originalMaterials.size === 0) {
+        currentModel.traverse(c => {
+          if (c.isMesh) originalMaterials.set(c.uuid, c.material);
+        });
+      }
+
+      // Try loading each texture, skip if fails
+      const tryLoad = (url) => new Promise((res) => {
+        texLoader.load(url, (tex) => {
+          tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(matTiling, matTiling);
+          res(tex);
+        }, undefined, () => res(null));
+      });
+
+      const [color, normal, roughness, ao] = await Promise.all([
+        tryLoad(urls.color), tryLoad(urls.normal), tryLoad(urls.roughness), tryLoad(urls.ao)
+      ]);
+
+      if (color) color.colorSpace = THREE.SRGBColorSpace;
+
+      const mat = new THREE.MeshStandardMaterial({
+        map: color, normalMap: normal, roughnessMap: roughness, aoMap: ao,
+        roughness: 1, metalness: 0,
+        normalScale: new THREE.Vector2(matNormalStr, matNormalStr),
+      });
+
+      currentModel.traverse(c => {
+        if (c.isMesh) {
+          c.material = mat;
+          if (c.geometry && !c.geometry.attributes.uv2 && c.geometry.attributes.uv) {
+            c.geometry.setAttribute('uv2', c.geometry.attributes.uv.clone());
+          }
+        }
+      });
+      currentPBRMaterial = mat;
+      s.textContent = `Applied: ${name}`;
+    }
+
+    async function applyPhHdri(id, name) {
+      const s = $('ph-hdri-status');
+      s.textContent = `Loading ${name}...`;
+      try {
+        const url = phHdriURL(id, '1k');
+        const hdr = await new RGBELoader().loadAsync(url);
+        currentEnvMap = pmremGenerator.fromEquirectangular(hdr).texture;
+        scene.environment = currentEnvMap;
+        if (showEnvBg) scene.background = currentEnvMap;
+        hdr.dispose();
+        s.textContent = `Applied: ${name}`;
+      } catch (e) {
+        s.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    $('ph-mat-btn').addEventListener('click', () => showPhMaterials($('ph-mat-search').value.trim()));
+    $('ph-mat-search').addEventListener('keypress', e => { if (e.key === 'Enter') showPhMaterials(e.target.value.trim()); });
+    $('ph-hdri-btn').addEventListener('click', () => showPhHdris($('ph-hdri-search').value.trim()));
+    $('ph-hdri-search').addEventListener('keypress', e => { if (e.key === 'Enter') showPhHdris(e.target.value.trim()); });
+
+    // --- Crease Angle Smoothing ---
+    S('ctrl-crease', v => { $('v-crease').textContent = v; });
+    $('btn-apply-crease').addEventListener('click', async () => {
+      if (!currentModel) return;
+      const angle = parseFloat($('ctrl-crease').value) * Math.PI / 180;
+      const { toCreasedNormals } = await import('three/addons/utils/BufferGeometryUtils.js');
+      currentModel.traverse(c => {
+        if (c.isMesh && c.geometry) {
+          try {
+            c.geometry = toCreasedNormals(c.geometry, angle);
+            const mats = Array.isArray(c.material) ? c.material : [c.material];
+            mats.forEach(m => { m.flatShading = false; m.needsUpdate = true; });
+          } catch (e) { console.warn('crease failed on', c.name, e); }
+        }
+      });
     });
 
     // --- Materials ---
